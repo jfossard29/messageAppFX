@@ -100,6 +100,34 @@ public class Channel extends AbstractMessageAppObject implements IMessageRecipie
 		return new ArrayList<User>(mUsers);
 	}
 
+    /**
+     * Ajoute des utilisateurs au canal.
+     * @param users Liste des utilisateurs à ajouter.
+     */
+    public void addUsers(List<User> users) {
+        if (users != null && !users.isEmpty()) {
+            mUsers.addAll(users);
+            mPrivate = true; // Devient privé (ou le reste) si on ajoute des utilisateurs spécifiques
+        }
+    }
+
+    /**
+     * Retire un utilisateur du canal.
+     * @param user Utilisateur à retirer.
+     */
+    public void removeUser(User user) {
+        if (user != null) {
+            mUsers.removeIf(u -> u.getUuid().equals(user.getUuid()));
+        }
+    }
+
+    /**
+     * @return true si le canal est privé.
+     */
+    public boolean isPrivate() {
+        return mPrivate;
+    }
+
 	/**
 	 * {@inheritDoc}
 	 */

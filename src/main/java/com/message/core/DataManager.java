@@ -151,6 +151,14 @@ public class DataManager implements IDatabaseObserver {
 		this.mEntityManager.writeChannelFile(channel);
 	}
 
+    /**
+     * Supprime un canal.
+     * @param channel
+     */
+    public void deleteChannel(Channel channel) {
+        this.mEntityManager.deleteChannel(channel);
+    }
+
     public void updateUserOnlineStatus(User user) {
         this.mEntityManager.updateUserOnlineStatus(user);
     }

@@ -2,20 +2,26 @@ package com.message.ihm.controllers;
 
 import com.message.common.Constants;
 import com.message.core.DataManager;
+import com.message.core.database.IDatabaseObserver;
 import com.message.core.session.ISession;
+import com.message.datamodel.Channel;
 import com.message.datamodel.Message;
 import com.message.datamodel.User;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
-public class ProfileController implements IProfileController {
+public class ProfileController implements IProfileController, IDatabaseObserver {
 
     private final DataManager mDataManager;
     private final ISession mSession;
+    private final List<IProfileControllerObserver> mObservers = new ArrayList<>();
 
     public ProfileController(DataManager dataManager, ISession session) {
         this.mDataManager = dataManager;
         this.mSession = session;
+        this.mDataManager.addObserver(this);
     }
 
     @Override
@@ -24,6 +30,7 @@ public class ProfileController implements IProfileController {
         if (currentUser != null && newName != null && !newName.trim().isEmpty()) {
             currentUser.setName(newName);
             mDataManager.updateUser(currentUser);
+            // notifyObservers(); // Handled by IDatabaseObserver
         }
     }
 
@@ -54,11 +61,79 @@ public class ProfileController implements IProfileController {
 
             // 4. Supprimer le fichier de l'utilisateur
             mDataManager.deleteAccount(userToDelete);
+            // notifyObservers(); // Handled by IDatabaseObserver
         }
     }
 
     @Override
     public User getCurrentUser() {
         return mSession.getConnectedUser();
+    }
+
+    @Override
+    public void addObserver(IProfileControllerObserver observer) {
+        mObservers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(IProfileControllerObserver observer) {
+        mObservers.remove(observer);
+    }
+
+    private void notifyObservers() {
+        for (IProfileControllerObserver observer : mObservers) {
+            observer.onProfileUpdated();
+        }
+    }
+
+    // IDatabaseObserver implementation
+
+    @Override
+    public void notifyMessageAdded(Message addedMessage) {
+        // Not interested
+    }
+
+    @Override
+    public void notifyMessageDeleted(Message deletedMessage) {
+        // Not interested
+    }
+
+    @Override
+    public void notifyMessageModified(Message modifiedMessage) {
+        // Not interested
+    }
+
+    @Override
+    public void notifyUserAdded(User addedUser) {
+        // Not interested
+    }
+
+    @Override
+    public void notifyUserDeleted(User deletedUser) {
+        // Not interested
+    }
+
+    @Override
+    public void notifyUserModified(User modifiedUser) {
+        // Check if the modified user is the current user
+        User currentUser = mSession.getConnectedUser();
+        if (currentUser != null && modifiedUser.getUuid().equals(currentUser.getUuid())) {
+            notifyObservers();
+        }
+    }
+
+    @Override
+    public void notifyChannelAdded(Channel addedChannel) {
+        // Not interested
+    }
+
+    @Override
+    public void notifyChannelDeleted(Channel deletedChannel) {
+        // Not interested
+    }
+
+    @Override
+    public void notifyChannelModified(Channel modifiedChannel) {
+        // Not interested
     }
 }

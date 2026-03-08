@@ -250,6 +250,14 @@ public class DataFilesManager {
         }
     }
 
+    public void deleteChannelFile(Channel channel) {
+        String destFileName = this.getFileName(channel.getUuid(), Constants.CHANNEL_FILE_EXTENSION);
+        File file = new File(destFileName);
+        if (file.exists()) {
+            file.delete();
+        }
+    }
+
 	/**
 	 * Retourne un chemin d'accès au fichier pour l'uuid et l'extension donnés.
 	 *

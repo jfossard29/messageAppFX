@@ -19,4 +19,11 @@ public interface IProfileController {
      * @return L'utilisateur connecté.
      */
     User getCurrentUser();
+
+    void addObserver(IProfileControllerObserver observer);
+    void removeObserver(IProfileControllerObserver observer);
+
+    interface IProfileControllerObserver {
+        void onProfileUpdated();
+    }
 }

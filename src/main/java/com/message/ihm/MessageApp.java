@@ -16,7 +16,7 @@ import java.io.File;
 
 public class MessageApp extends Application {
 
-    private static final boolean TEST_MODE = false;
+    private static final boolean TEST_MODE = true;
     private static final String PROD_EXCHANGE_DIR = "\\\\10.66.66.1\\messageAppEchanges";
 
     private static DataManager sDataManager;
@@ -76,19 +76,12 @@ public class MessageApp extends Application {
      * Mode TEST : résout le dossier "echanges" depuis les resources du classpath.
      */
     private File getTestExchangeDirectory() {
-        try {
-            java.net.URL resourceUrl = getClass().getResource("/echanges");
-            if (resourceUrl != null) {
-                File dir = new File(resourceUrl.toURI());
-                if (dir.isDirectory() && dir.canRead() && dir.canWrite()) {
-                    System.out.println("[TEST] Répertoire d'échange : " + dir.getAbsolutePath());
-                    return dir;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        File dir = new File("src/main/resources/echanges");
+        if (dir.isDirectory() && dir.canRead() && dir.canWrite()) {
+            System.out.println("[TEST] Répertoire d'échange : " + dir.getAbsolutePath());
+            return dir;
         }
-        showDirectoryError("Impossible de trouver le répertoire de test (resources/echanges).");
+        showDirectoryError("Impossible de trouver le répertoire de test (src/main/resources/echanges).");
         return null;
     }
 

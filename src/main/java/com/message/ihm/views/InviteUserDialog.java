@@ -1,10 +1,10 @@
 package com.message.ihm.views;
 
 import com.message.common.Constants;
+import com.message.datamodel.Channel;
 import com.message.datamodel.User;
 import com.message.ihm.controllers.IChannelController;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -18,30 +18,36 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class AddChannelDialog extends Stage {
+public class InviteUserDialog extends Stage {
 
     private final IChannelController mController;
     private final Set<User> mAvailableUsers;
-    private final User mCurrentUser;
+    private final Channel mCurrentChannel;
     private final Set<User> mSelectedUsers = new HashSet<>();
 
-    private TextField mNameField;
-    private CheckBox mPrivateCheckBox;
     private ListView<User> mUsersList;
     private TextField mSearchUserField;
-    private VBox mUserSelectionBox;
 
-    public AddChannelDialog(Stage owner, IChannelController controller, Set<User> availableUsers, User currentUser) {
+    public InviteUserDialog(Stage owner, IChannelController controller, Set<User> allUsers, Channel currentChannel) {
 
         this.mController = controller;
-        this.mAvailableUsers = availableUsers;
-        this.mCurrentUser = currentUser;
+        this.mCurrentChannel = currentChannel;
+        
+        // Filtrer les utilisateurs déjà dans le canal
+        Set<UUID> existingMemberIds = currentChannel.getUsers().stream()
+                .map(User::getUuid)
+                .collect(Collectors.toSet());
+
+        this.mAvailableUsers = allUsers.stream()
+                .filter(u -> !existingMemberIds.contains(u.getUuid()))
+                .collect(Collectors.toSet());
 
         initOwner(owner);
         initModality(Modality.APPLICATION_MODAL);
-        setTitle("Créer un canal");
+        setTitle("Inviter des amis dans " + currentChannel.getName());
 
         initGui();
     }
@@ -54,29 +60,11 @@ public class AddChannelDialog extends Stage {
 
         /* ===== Label ===== */
 
-        Label nameLabel = new Label("NOM DU CANAL");
-        nameLabel.setTextFill(Color.rgb(185, 187, 190));
-        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12px;");
+        Label titleLabel = new Label("INVITER DES AMIS");
+        titleLabel.setTextFill(Color.rgb(185, 187, 190));
+        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12px;");
 
-        /* ===== Input ===== */
-
-        mNameField = new TextField();
-        mNameField.setStyle("""
-                -fx-background-color: rgb(64,68,75);
-                -fx-text-fill: white;
-                """);
-
-        /* ===== Checkbox ===== */
-
-        mPrivateCheckBox = new CheckBox("Canal privé");
-        mPrivateCheckBox.setTextFill(Color.WHITE);
-        mPrivateCheckBox.setOnAction(e -> toggleUserList(mPrivateCheckBox.isSelected()));
-
-        /* ===== User Selection Area ===== */
-
-        mUserSelectionBox = new VBox(10);
-        mUserSelectionBox.setVisible(false);
-        mUserSelectionBox.setManaged(false);
+        /* ===== Search ===== */
 
         mSearchUserField = new TextField();
         mSearchUserField.setPromptText("Rechercher un utilisateur...");
@@ -86,8 +74,10 @@ public class AddChannelDialog extends Stage {
                 """);
         mSearchUserField.textProperty().addListener((obs, oldVal, newVal) -> filterUsers(newVal));
 
+        /* ===== List ===== */
+
         mUsersList = new ListView<>();
-        mUsersList.setPrefHeight(150);
+        mUsersList.setPrefHeight(250);
         mUsersList.setStyle("""
                 -fx-control-inner-background: rgb(47,49,54);
                 -fx-background-color: rgb(47,49,54);
@@ -107,7 +97,6 @@ public class AddChannelDialog extends Stage {
                     checkBox.setText(user.getUserTag());
                     checkBox.setTextFill(Color.rgb(185, 187, 190));
                     
-                    // Update checkbox state based on selection set
                     checkBox.setSelected(mSelectedUsers.contains(user));
                     
                     checkBox.setOnAction(e -> {
@@ -124,47 +113,36 @@ public class AddChannelDialog extends Stage {
             }
         });
 
-        // Initial population
         filterUsers("");
-
-        mUserSelectionBox.getChildren().addAll(mSearchUserField, mUsersList);
 
         /* ===== Boutons ===== */
 
         Button cancelBtn = new Button("Annuler");
         cancelBtn.setOnAction(e -> close());
 
-        Button createBtn = new Button("Créer");
-        createBtn.setStyle("""
+        Button inviteBtn = new Button("Inviter");
+        inviteBtn.setStyle("""
                 -fx-background-color: rgb(88,101,242);
                 -fx-text-fill: white;
                 -fx-padding: 8 20 8 20;
                 """);
 
-        createBtn.setOnAction(e -> createChannel());
+        inviteBtn.setOnAction(e -> inviteUsers());
 
-        HBox buttonBox = new HBox(10, cancelBtn, createBtn);
+        HBox buttonBox = new HBox(10, cancelBtn, inviteBtn);
         buttonBox.setAlignment(Pos.CENTER_RIGHT);
 
         /* ===== Layout ===== */
 
         root.getChildren().addAll(
-                nameLabel,
-                mNameField,
-                mPrivateCheckBox,
-                mUserSelectionBox,
+                titleLabel,
+                mSearchUserField,
+                mUsersList,
                 buttonBox
         );
 
-        Scene scene = new Scene(root, 400, 500);
+        Scene scene = new Scene(root, 400, 450);
         setScene(scene);
-    }
-
-    private void toggleUserList(boolean show) {
-        mUserSelectionBox.setVisible(show);
-        mUserSelectionBox.setManaged(show);
-        // Resize window if needed, or let layout handle it
-        sizeToScene();
     }
 
     private void filterUsers(String query) {
@@ -172,15 +150,9 @@ public class AddChannelDialog extends Stage {
         
         List<User> filtered = mAvailableUsers.stream()
                 .filter(u -> {
-                    // Exclude current user
-                    if (mCurrentUser != null && u.getUserTag().equals(mCurrentUser.getUserTag())) {
-                        return false;
-                    }
-                    // Exclude unknown user
                     if (u.getUuid().equals(Constants.UNKNONWN_USER_UUID)) {
                         return false;
                     }
-
                     return u.getUserTag().toLowerCase().contains(lowerQuery) ||
                            (u.getName() != null && u.getName().toLowerCase().contains(lowerQuery));
                 })
@@ -189,19 +161,13 @@ public class AddChannelDialog extends Stage {
         mUsersList.setItems(FXCollections.observableArrayList(filtered));
     }
 
-    private void createChannel() {
-
-        String name = mNameField.getText();
-        boolean isPrivate = mPrivateCheckBox.isSelected();
-        boolean success;
-
-        if (isPrivate) {
-            // Use the set of selected users
-            List<User> selectedUsersList = new ArrayList<>(mSelectedUsers);
-            success = mController.createChannel(name, selectedUsersList);
-        } else {
-            success = mController.createChannel(name);
+    private void inviteUsers() {
+        if (mSelectedUsers.isEmpty()) {
+            close();
+            return;
         }
+
+        boolean success = mController.inviteUsers(mCurrentChannel, new ArrayList<>(mSelectedUsers));
 
         if (success) {
             close();
@@ -209,7 +175,7 @@ public class AddChannelDialog extends Stage {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Erreur");
             alert.setHeaderText(null);
-            alert.setContentText("Erreur lors de la création (nom vide ou existant).");
+            alert.setContentText("Erreur lors de l'invitation.");
             alert.showAndWait();
         }
     }

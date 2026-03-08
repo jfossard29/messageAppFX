@@ -41,7 +41,8 @@ public class HomeView extends BorderPane {
 
         this.mChatView = new ChatView(
                 mSessionController,
-                mChatController
+                mChatController,
+                mChannelController // Ajout du ChannelController
         );
 
         // Placement dans le BorderPane

@@ -9,6 +9,8 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
+import java.net.URL;
+
 /**
  * Classe principale de la vue JavaFX de l'application.
  * Gère la navigation entre LoginViewFX et HomeViewFX.
@@ -60,6 +62,33 @@ public class MessageAppMainView {
 
         // Création de la scène
         Scene scene = new Scene(mainContainer, 1200, 800);
+
+        // Chargement du CSS global
+        String cssPath = "/com/message/ihm/views/styles.css";
+        URL cssUrl = getClass().getResource(cssPath);
+
+        if (cssUrl == null) {
+            System.err.println("ERREUR : Impossible de trouver le fichier CSS via getClass().getResource('" + cssPath + "')");
+            
+            // Essai via le ClassLoader du thread courant
+            cssUrl = Thread.currentThread().getContextClassLoader().getResource("com/message/ihm/views/styles.css");
+            if (cssUrl == null) {
+                 System.err.println("ERREUR : Impossible de trouver le fichier CSS via Thread.currentThread().getContextClassLoader().getResource('com/message/ihm/views/styles.css')");
+            } else {
+                System.out.println("SUCCÈS : CSS trouvé via Thread Context ClassLoader : " + cssUrl.toExternalForm());
+            }
+        } else {
+            System.out.println("SUCCÈS : CSS trouvé via getClass().getResource() : " + cssUrl.toExternalForm());
+        }
+
+        if (cssUrl != null) {
+            try {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            } catch (Exception e) {
+                System.err.println("EXCEPTION lors de l'ajout de la feuille de style : " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
 
         // Icone de l'application
         try {

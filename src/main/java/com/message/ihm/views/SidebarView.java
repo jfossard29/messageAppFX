@@ -15,10 +15,12 @@ import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class SidebarView extends BorderPane implements ISessionController.ISessionControllerObserver {
+public class SidebarView extends BorderPane implements ISessionController.ISessionControllerObserver, IChannelController.IChannelControllerObserver, IProfileController.IProfileControllerObserver {
 
     private final ISessionController mSessionController;
     private final IChannelController mChannelController;
@@ -28,10 +30,11 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
 
     private Set<User> listAllUsers = new HashSet<>();
     private Set<Channel> listAllChannels = new HashSet<>();
+    private Channel mSelectedChannel;
 
     private VBox mainListBox;
     private TextField searchField;
-    private Label userLabel;
+    private Button userProfileBtn;
 
     public SidebarView(ISessionController sessionController,
                        IChannelController channelController,
@@ -42,6 +45,8 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         this.mProfileController = profileController;
 
         this.mSessionController.addObserver(this);
+        this.mChannelController.addObserver(this);
+        this.mProfileController.addObserver(this);
         initGui();
     }
 
@@ -58,19 +63,51 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         appName.setPadding(new Insets(15));
 
         Button addChannelBtn = new Button("+");
-        addChannelBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white;");
+
+        String btnNormal = """
+                -fx-background-color: rgb(88,101,242);
+                -fx-text-fill: white;
+                -fx-font-weight: bold;
+                -fx-font-size: 16px;
+                -fx-background-radius: 4;
+                -fx-min-width: 28px;
+                -fx-min-height: 28px;
+                -fx-max-width: 28px;
+                -fx-max-height: 28px;
+                -fx-padding: 0;
+                -fx-cursor: hand;
+                """;
+        String btnHover = """
+                -fx-background-color: rgb(71,82,196);
+                -fx-text-fill: white;
+                -fx-font-weight: bold;
+                -fx-font-size: 16px;
+                -fx-background-radius: 4;
+                -fx-min-width: 28px;
+                -fx-min-height: 28px;
+                -fx-max-width: 28px;
+                -fx-max-height: 28px;
+                -fx-padding: 0;
+                -fx-cursor: hand;
+                """;
+
+        addChannelBtn.setStyle(btnNormal);
+        addChannelBtn.setOnMouseEntered(e -> addChannelBtn.setStyle(btnHover));
+        addChannelBtn.setOnMouseExited(e -> addChannelBtn.setStyle(btnNormal));
+
         addChannelBtn.setOnAction(e -> {
             AddChannelDialog dialog =
                     new AddChannelDialog((Stage) getScene().getWindow(),
                             mChannelController,
-                            listAllUsers);
+                            listAllUsers,
+                            mCurrentUser);
             dialog.showAndWait();
-            refreshLists();
         });
 
         HBox header = new HBox(appName, new Region(), addChannelBtn);
         HBox.setHgrow(header.getChildren().get(1), Priority.ALWAYS);
         header.setAlignment(Pos.CENTER_LEFT);
+        header.setPadding(new Insets(0, 15, 0, 0));
 
         this.setTop(header);
 
@@ -100,10 +137,20 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
 
         /* ================= USER PANEL ================= */
 
-        userLabel = new Label("Utilisateur");
-        userLabel.setTextFill(Color.WHITE);
-        userLabel.setStyle("-fx-font-weight:bold;");
-        userLabel.setOnMouseClicked(e -> {
+        userProfileBtn = new Button("Utilisateur");
+        userProfileBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight:bold;");
+
+        Label settingsIcon = new Label("\u2699");
+        settingsIcon.setStyle("-fx-font-size: 16px; -fx-text-fill: white;");
+
+        userProfileBtn.setGraphic(settingsIcon);
+        userProfileBtn.setContentDisplay(ContentDisplay.RIGHT);
+        userProfileBtn.setGraphicTextGap(8);
+
+        userProfileBtn.setOnMouseEntered(e -> userProfileBtn.setStyle("-fx-background-color: rgb(60,62,66); -fx-text-fill: white; -fx-font-weight:bold; -fx-background-radius: 4;"));
+        userProfileBtn.setOnMouseExited(e -> userProfileBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight:bold;"));
+
+        userProfileBtn.setOnAction(e -> {
             ProfileDialog dialog =
                     new ProfileDialog((Stage) getScene().getWindow(),
                             mProfileController,
@@ -112,16 +159,19 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         });
 
         Button logoutBtn = new Button("Déconnexion");
-        logoutBtn.setStyle("""
-                -fx-background-color: rgb(237,66,69);
-                -fx-text-fill: white;
-                """);
+        String logoutNormal = "-fx-background-color: rgb(237,66,69); -fx-text-fill: white;";
+        String logoutHover = "-fx-background-color: rgb(200,50,50); -fx-text-fill: white;";
+
+        logoutBtn.setStyle(logoutNormal);
+        logoutBtn.setOnMouseEntered(e -> logoutBtn.setStyle(logoutHover));
+        logoutBtn.setOnMouseExited(e -> logoutBtn.setStyle(logoutNormal));
         logoutBtn.setOnAction(e -> mSessionController.logout());
 
-        HBox userPanel = new HBox(userLabel, new Region(), logoutBtn);
+        HBox userPanel = new HBox(10, userProfileBtn, new Region(), logoutBtn);
         HBox.setHgrow(userPanel.getChildren().get(1), Priority.ALWAYS);
         userPanel.setPadding(new Insets(10));
         userPanel.setStyle("-fx-background-color: rgb(41,43,47);");
+        userPanel.setAlignment(Pos.CENTER_LEFT);
 
         VBox bottomBox = new VBox(searchField, userPanel);
 
@@ -133,7 +183,7 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
     public void setUser(User user) {
         this.mCurrentUser = user;
         if (user != null) {
-            userLabel.setText(user.getUserTag());
+            userProfileBtn.setText(user.getName());
         }
         refreshLists();
     }
@@ -152,14 +202,41 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
 
         String lower = query.toLowerCase();
 
-        Set<User> usersFiltered = listAllUsers.stream()
+        // Filter channels first
+        Set<Channel> channelsToDisplay = listAllChannels.stream()
+                .filter(c -> {
+                    if (c.isPrivate()) {
+                        // If private, only show if current user is a member
+                        return mCurrentUser != null && c.getUsers().stream().anyMatch(u -> u.getUuid().equals(mCurrentUser.getUuid()));
+                    }
+                    return true; // Public channels are always visible
+                })
+                .collect(Collectors.toSet());
+
+        Set<Channel> channelsFiltered = channelsToDisplay.stream()
+                .filter(c -> c.getName().toLowerCase().contains(lower))
+                .collect(Collectors.toSet());
+
+
+        // Filter users based on selected channel
+        Set<User> usersToDisplay;
+        if (mSelectedChannel != null && mSelectedChannel.isPrivate()) {
+            List<User> allowedUsers = mSelectedChannel.getUsers();
+            Set<UUID> allowedUserIds = allowedUsers.stream()
+                    .map(User::getUuid)
+                    .collect(Collectors.toSet());
+
+            usersToDisplay = listAllUsers.stream()
+                    .filter(u -> allowedUserIds.contains(u.getUuid()))
+                    .collect(Collectors.toSet());
+        } else {
+            usersToDisplay = new HashSet<>(listAllUsers);
+        }
+
+        Set<User> usersFiltered = usersToDisplay.stream()
                 .filter(u -> u.getUserTag().toLowerCase().contains(lower)
                         || (u.getName() != null &&
                         u.getName().toLowerCase().contains(lower)))
-                .collect(Collectors.toSet());
-
-        Set<Channel> channelsFiltered = listAllChannels.stream()
-                .filter(c -> c.getName().toLowerCase().contains(lower))
                 .collect(Collectors.toSet());
 
         updateDisplay(channelsFiltered, usersFiltered);
@@ -215,7 +292,13 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         Button btn = new Button("# " + c.getName());
         btn.setAlignment(Pos.CENTER_LEFT);
         btn.setMaxWidth(Double.MAX_VALUE);
-        btn.setStyle("-fx-background-color: transparent; -fx-text-fill: rgb(142,146,151);");
+
+        String normalStyle = "-fx-background-color: transparent; -fx-text-fill: rgb(142,146,151);";
+        String hoverStyle = "-fx-background-color: rgb(50,53,59); -fx-text-fill: white;";
+
+        btn.setStyle(normalStyle);
+        btn.setOnMouseEntered(e -> btn.setStyle(hoverStyle));
+        btn.setOnMouseExited(e -> btn.setStyle(normalStyle));
 
         btn.setOnAction(e -> mSessionController.selectChannel(c));
 
@@ -236,6 +319,19 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         box.setAlignment(Pos.CENTER_LEFT);
         box.setPadding(new Insets(5, 5, 5, 10));
 
+        String normalStyle = "-fx-background-color: transparent;";
+        String hoverStyle = "-fx-background-color: rgb(50,53,59); -fx-cursor: hand; -fx-background-radius: 4;";
+
+        box.setStyle(normalStyle);
+        box.setOnMouseEntered(e -> {
+            box.setStyle(hoverStyle);
+            name.setTextFill(Color.WHITE);
+        });
+        box.setOnMouseExited(e -> {
+            box.setStyle(normalStyle);
+            name.setTextFill(Color.rgb(142,146,151));
+        });
+
         return box;
     }
 
@@ -243,11 +339,25 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
 
     @Override
     public void onChannelSelected(Channel channel) {
-        // Géré par ChatView
+        this.mSelectedChannel = channel;
+        filterLists(searchField.getText());
     }
 
     @Override
     public void onUsersUpdated() {
+        refreshLists();
+    }
+
+    @Override
+    public void onChannelListUpdated() {
+        refreshLists();
+    }
+
+    @Override
+    public void onProfileUpdated() {
+        if (mCurrentUser != null) {
+            userProfileBtn.setText(mCurrentUser.getName());
+        }
         refreshLists();
     }
 }
