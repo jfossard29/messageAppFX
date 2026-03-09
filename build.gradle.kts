@@ -18,19 +18,8 @@ javafx {
 
 application {
     mainClass.set("com.Main")
-} 
-
-tasks.register<Jar>("fatJar") {
-    group = "build"
-    description = "Compile le projet en jar"
-    archiveClassifier.set("all")
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    manifest {
-        attributes["Main-Class"] = "com.Main"
-    }
-    from(sourceSets.main.get().output)
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
 }
+
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
