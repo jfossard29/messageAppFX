@@ -28,10 +28,10 @@ jobs:
       - name: Build with Gradle
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: build fatJar
+          arguments: fatJar
 
       - name: Upload jar
         uses: actions/upload-artifact@v4
         with:
           name: application-jar
-          path: build/libs/*.jar
+          path: build/libs/*-all.jar
