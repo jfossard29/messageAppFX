@@ -25,6 +25,10 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+}
+
 tasks.register<Jar>("fatJar") {
     group = "build"
     description = "Compile le projet en jar"
