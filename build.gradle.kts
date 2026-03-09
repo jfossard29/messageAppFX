@@ -20,6 +20,15 @@ application {
     mainClass.set("com.Main")
 }
 
+dependencies {
+    testImplementation(platform("org.junit:junit-bom:5.10.0"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+}
+
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+}
+
 tasks.register<Jar>("fatJar") {
     group = "build"
     description = "Compile le projet en jar"
@@ -30,8 +39,4 @@ tasks.register<Jar>("fatJar") {
     }
     from(sourceSets.main.get().output)
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-}
-dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
 }
