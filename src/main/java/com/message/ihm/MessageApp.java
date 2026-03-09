@@ -36,7 +36,7 @@ public class MessageApp extends Application {
         // Choix du répertoire d'échange
         File exchangeDir;
         if (TEST_MODE) {
-            exchangeDir = getTestExchangeDirectory();
+            exchangeDir = chooseExchangeDirectory(primaryStage);
         } else {
             exchangeDir = getProdExchangeDirectory();
         }
