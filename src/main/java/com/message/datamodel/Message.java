@@ -27,7 +27,7 @@ public class Message extends AbstractMessageAppObject {
 	/**
 	 * Corps du message.
 	 */
-	protected final String mText;
+	protected String mText;
 
 	/**
 	 * Constructeur.
@@ -77,6 +77,14 @@ public class Message extends AbstractMessageAppObject {
 	public String getText() {
 		return mText;
 	}
+
+    /**
+     * Modifie le corps du message.
+     * @param text le nouveau texte.
+     */
+    public void setText(String text) {
+        this.mText = text;
+    }
 
 	/**
 	 * Retourne la date d'émission.

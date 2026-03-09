@@ -19,6 +19,12 @@ public interface IChatController {
     void sendMessage(String text, Channel channel);
 
     /**
+     * Supprime un message (soft delete).
+     * @param message Le message à supprimer.
+     */
+    void deleteMessage(Message message);
+
+    /**
      * Récupère les messages d'un canal donné.
      * @param channel Le canal dont on veut les messages.
      * @return La liste des messages.

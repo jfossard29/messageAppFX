@@ -10,6 +10,7 @@ import com.message.datamodel.User;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 public class ChannelController implements IChannelController, IDatabaseObserver {
 

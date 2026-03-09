@@ -1,6 +1,7 @@
 package com.message.ihm.views;
 
 import com.message.datamodel.Channel;
+import com.message.datamodel.Message;
 import com.message.datamodel.User;
 import com.message.ihm.controllers.IChannelController;
 import com.message.ihm.controllers.IProfileController;
@@ -14,6 +15,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +33,10 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
     private Set<User> listAllUsers = new HashSet<>();
     private Set<Channel> listAllChannels = new HashSet<>();
     private Channel mSelectedChannel;
+
+    // Gestion des alertes
+    private Set<UUID> unreadChannels = new HashSet<>();
+    private Set<UUID> unreadUsers = new HashSet<>();
 
     private VBox mainListBox;
     private TextField searchField;
@@ -220,7 +226,9 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
 
         // Filter users based on selected channel
         Set<User> usersToDisplay;
-        if (mSelectedChannel != null && mSelectedChannel.isPrivate()) {
+        
+        // On filtre les utilisateurs SEULEMENT si le canal sélectionné est privé ET n'est PAS un DM
+        if (mSelectedChannel != null && mSelectedChannel.isPrivate() && !mSelectedChannel.isDirectMessage()) {
             List<User> allowedUsers = mSelectedChannel.getUsers();
             Set<UUID> allowedUserIds = allowedUsers.stream()
                     .map(User::getUuid)
@@ -230,6 +238,7 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
                     .filter(u -> allowedUserIds.contains(u.getUuid()))
                     .collect(Collectors.toSet());
         } else {
+            // Si c'est un canal public, un DM, ou aucun canal sélectionné, on affiche tout le monde
             usersToDisplay = new HashSet<>(listAllUsers);
         }
 
@@ -295,10 +304,33 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
 
         String normalStyle = "-fx-background-color: transparent; -fx-text-fill: rgb(142,146,151);";
         String hoverStyle = "-fx-background-color: rgb(50,53,59); -fx-text-fill: white;";
+        
+        // Style pour les canaux avec messages non lus (pastille blanche)
+        if (unreadChannels.contains(c.getUuid())) {
+            btn.setGraphic(new Circle(4, Color.WHITE));
+            btn.setGraphicTextGap(8);
+            btn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold;");
+        }
 
-        btn.setStyle(normalStyle);
-        btn.setOnMouseEntered(e -> btn.setStyle(hoverStyle));
-        btn.setOnMouseExited(e -> btn.setStyle(normalStyle));
+        // Si c'est le canal sélectionné, on le met en surbrillance
+        if (mSelectedChannel != null && mSelectedChannel.getUuid().equals(c.getUuid())) {
+             btn.setStyle("-fx-background-color: rgb(57,60,67); -fx-text-fill: white;");
+        }
+
+        btn.setOnMouseEntered(e -> {
+            if (mSelectedChannel == null || !mSelectedChannel.getUuid().equals(c.getUuid())) {
+                btn.setStyle(hoverStyle);
+            }
+        });
+        btn.setOnMouseExited(e -> {
+            if (mSelectedChannel != null && mSelectedChannel.getUuid().equals(c.getUuid())) {
+                btn.setStyle("-fx-background-color: rgb(57,60,67); -fx-text-fill: white;");
+            } else if (unreadChannels.contains(c.getUuid())) {
+                btn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold;");
+            } else {
+                btn.setStyle(normalStyle);
+            }
+        });
 
         btn.setOnAction(e -> mSessionController.selectChannel(c));
 
@@ -314,22 +346,68 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
 
         Label name = new Label(u.getName());
         name.setTextFill(Color.rgb(142,146,151));
+        
+        // Gestion de l'alerte DM (pastille rouge)
+        Circle alertBadge = null;
+        if (unreadUsers.contains(u.getUuid())) {
+            alertBadge = new Circle(4, Color.RED);
+            name.setTextFill(Color.WHITE);
+            name.setStyle("-fx-font-weight: bold;");
+        }
 
-        HBox box = new HBox(8, status, name);
+        HBox box;
+        if (alertBadge != null) {
+            box = new HBox(8, status, name, new Region(), alertBadge);
+            HBox.setHgrow(box.getChildren().get(2), Priority.ALWAYS);
+        } else {
+            box = new HBox(8, status, name);
+        }
+        
         box.setAlignment(Pos.CENTER_LEFT);
         box.setPadding(new Insets(5, 5, 5, 10));
 
         String normalStyle = "-fx-background-color: transparent;";
         String hoverStyle = "-fx-background-color: rgb(50,53,59); -fx-cursor: hand; -fx-background-radius: 4;";
+        
+        // Si c'est l'utilisateur sélectionné (via DM)
+        if (mSelectedChannel != null && mSelectedChannel.isDirectMessage()) {
+             boolean isSelectedUser = mSelectedChannel.getUsers().stream()
+                     .anyMatch(user -> user.getUuid().equals(u.getUuid()));
+             if (isSelectedUser) {
+                 normalStyle = "-fx-background-color: rgb(57,60,67); -fx-background-radius: 4;";
+                 name.setTextFill(Color.WHITE);
+             }
+        }
 
         box.setStyle(normalStyle);
+        
+        final String finalNormalStyle = normalStyle;
+        
         box.setOnMouseEntered(e -> {
             box.setStyle(hoverStyle);
             name.setTextFill(Color.WHITE);
         });
         box.setOnMouseExited(e -> {
-            box.setStyle(normalStyle);
-            name.setTextFill(Color.rgb(142,146,151));
+            box.setStyle(finalNormalStyle);
+            if (!unreadUsers.contains(u.getUuid()) && !finalNormalStyle.contains("rgb(57,60,67)")) {
+                name.setTextFill(Color.rgb(142,146,151));
+            }
+        });
+
+        // Ajout de l'action au clic
+        box.setOnMouseClicked(e -> {
+            if (mCurrentUser != null && !mCurrentUser.getUuid().equals(u.getUuid())) {
+                // Création d'un canal "fantôme" pour le DM
+                List<User> participants = new ArrayList<>();
+                participants.add(mCurrentUser);
+                participants.add(u);
+
+                // Le nom est celui de l'autre utilisateur, pour l'affichage dans le header du chat
+                Channel phantomChannel = new Channel(mCurrentUser, u.getName(), participants);
+                phantomChannel.setDirectMessage(true);
+
+                mSessionController.selectChannel(phantomChannel);
+            }
         });
 
         return box;
@@ -340,6 +418,23 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
     @Override
     public void onChannelSelected(Channel channel) {
         this.mSelectedChannel = channel;
+        
+        // Suppression des alertes si on sélectionne le canal concerné
+        if (channel != null) {
+            if (channel.isDirectMessage()) {
+                // Si c'est un DM, on enlève l'alerte pour l'autre utilisateur
+                if (mCurrentUser != null) {
+                    channel.getUsers().stream()
+                            .filter(u -> !u.getUuid().equals(mCurrentUser.getUuid()))
+                            .findFirst()
+                            .ifPresent(u -> unreadUsers.remove(u.getUuid()));
+                }
+            } else {
+                // Si c'est un canal normal, on enlève l'alerte pour ce canal
+                unreadChannels.remove(channel.getUuid());
+            }
+        }
+        
         filterLists(searchField.getText());
     }
 
@@ -359,5 +454,53 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
             userProfileBtn.setText(mCurrentUser.getName());
         }
         refreshLists();
+    }
+
+    @Override
+    public void onMessageReceived(Message message) {
+        if (mCurrentUser == null) return;
+
+        // Ignorer mes propres messages
+        if (message.getSender().getUuid().equals(mCurrentUser.getUuid())) {
+            return;
+        }
+
+        UUID recipientId = message.getRecipient();
+        boolean isDM = false;
+        
+        // Vérifier si c'est un DM (le destinataire est moi)
+        if (recipientId.equals(mCurrentUser.getUuid())) {
+            isDM = true;
+        }
+
+        boolean needRefresh = false;
+
+        if (isDM) {
+            // C'est un DM pour moi
+            UUID senderId = message.getSender().getUuid();
+            
+            // Si je suis déjà en train de regarder ce DM, pas d'alerte
+            boolean isViewingThisDM = false;
+            if (mSelectedChannel != null && mSelectedChannel.isDirectMessage()) {
+                 isViewingThisDM = mSelectedChannel.getUsers().stream()
+                         .anyMatch(u -> u.getUuid().equals(senderId));
+            }
+
+            if (!isViewingThisDM) {
+                unreadUsers.add(senderId);
+                needRefresh = true;
+            }
+        } else {
+            // C'est un message de canal
+            // Si je suis déjà sur ce canal, pas d'alerte
+            if (mSelectedChannel == null || !mSelectedChannel.getUuid().equals(recipientId)) {
+                unreadChannels.add(recipientId);
+                needRefresh = true;
+            }
+        }
+
+        if (needRefresh) {
+            refreshLists();
+        }
     }
 }

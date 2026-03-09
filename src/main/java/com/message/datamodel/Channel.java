@@ -24,6 +24,11 @@ public class Channel extends AbstractMessageAppObject implements IMessageRecipie
 	 */
 	protected boolean mPrivate;
 
+    /**
+     * Indique si le canal est une conversation directe (DM).
+     */
+    protected boolean mIsDirectMessage;
+
 	/**
 	 * Liste des Utilisateurs du canal.
 	 */
@@ -72,12 +77,26 @@ public class Channel extends AbstractMessageAppObject implements IMessageRecipie
 	 * 
 	 */
 	public Channel(UUID messageUuid, User creator, String name, List<User> users) {
-		this(messageUuid, creator, name);
-		if (!users.isEmpty()) {
-			mPrivate = true;
-			mUsers.addAll(users);
-		}
+		this(messageUuid, creator, name, users, false);
 	}
+
+    /**
+     * Constructeur complet incluant le flag isDirectMessage.
+     *
+     * @param messageUuid identifiant du canal.
+     * @param creator     utilisateur à l'origine du canal.
+     * @param name        Nom du canal.
+     * @param users       Liste des utilisateurs du canal privé.
+     * @param isDirectMessage Indique si c'est un DM.
+     */
+    public Channel(UUID messageUuid, User creator, String name, List<User> users, boolean isDirectMessage) {
+        this(messageUuid, creator, name);
+        if (users != null && !users.isEmpty()) {
+            mPrivate = true;
+            mUsers.addAll(users);
+        }
+        mIsDirectMessage = isDirectMessage;
+    }
 
 	/**
 	 * @return l'utilisateur source du canal.
@@ -126,6 +145,21 @@ public class Channel extends AbstractMessageAppObject implements IMessageRecipie
      */
     public boolean isPrivate() {
         return mPrivate;
+    }
+
+    /**
+     * @return true si le canal est une conversation directe (DM).
+     */
+    public boolean isDirectMessage() {
+        return mIsDirectMessage;
+    }
+
+    /**
+     * Définit si le canal est une conversation directe.
+     * @param isDirectMessage true pour un DM.
+     */
+    public void setDirectMessage(boolean isDirectMessage) {
+        this.mIsDirectMessage = isDirectMessage;
     }
 
 	/**

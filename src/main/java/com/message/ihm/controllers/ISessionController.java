@@ -1,6 +1,7 @@
 package com.message.ihm.controllers;
 
 import com.message.datamodel.Channel;
+import com.message.datamodel.Message;
 import com.message.datamodel.User;
 
 import java.util.Set;
@@ -53,5 +54,6 @@ public interface ISessionController {
     interface ISessionControllerObserver {
         void onChannelSelected(Channel channel);
         void onUsersUpdated();
+        void onMessageReceived(Message message);
     }
 }

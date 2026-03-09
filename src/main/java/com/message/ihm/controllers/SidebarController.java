@@ -1,18 +1,22 @@
 package com.message.ihm.controllers;
 
 import com.message.datamodel.Channel;
+import com.message.datamodel.Message;
 import com.message.datamodel.User;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.VBox;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class SidebarController implements ISessionController.ISessionControllerObserver {
 
@@ -25,7 +29,7 @@ public class SidebarController implements ISessionController.ISessionControllerO
 
     private final ISessionController mSessionController;
     private final IChannelController mChannelController;
-    private final IProfileController mProfileController;
+    // mProfileController supprimé car inutilisé
 
     private ObservableList<Channel> channels = FXCollections.observableArrayList();
     private ObservableList<User> users = FXCollections.observableArrayList();
@@ -33,7 +37,7 @@ public class SidebarController implements ISessionController.ISessionControllerO
     public SidebarController(ISessionController sessionController, IChannelController channelController, IProfileController profileController) {
         this.mSessionController = sessionController;
         this.mChannelController = channelController;
-        this.mProfileController = profileController;
+        // mProfileController ignoré
         this.mSessionController.addObserver(this);
     }
 
@@ -47,9 +51,46 @@ public class SidebarController implements ISessionController.ISessionControllerO
 
         searchField.textProperty().addListener((observable, oldValue, newValue) -> filterLists(newValue));
 
+        // Gère la sélection d'un canal public ou de groupe
         channelListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
+                userListView.getSelectionModel().clearSelection();
                 mSessionController.selectChannel(newValue);
+            }
+        });
+
+        // Gère le clic sur un utilisateur pour ouvrir un chat privé
+        userListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, selectedUser) -> {
+            if (selectedUser != null) {
+                channelListView.getSelectionModel().clearSelection();
+                User currentUser = mSessionController.getCurrentUser();
+                if (currentUser != null && !currentUser.getUuid().equals(selectedUser.getUuid())) {
+                    
+                    // Création d'un canal "fantôme" pour le DM
+                    List<User> participants = new ArrayList<>();
+                    participants.add(currentUser);
+                    participants.add(selectedUser);
+                    
+                    // Le nom est celui de l'autre utilisateur, pour l'affichage dans le header du chat
+                    Channel phantomChannel = new Channel(currentUser, selectedUser.getName(), participants);
+                    phantomChannel.setDirectMessage(true);
+                    
+                    mSessionController.selectChannel(phantomChannel);
+                }
+            }
+        });
+
+        // Personnalise l'affichage des noms de canaux
+        channelListView.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(Channel channel, boolean empty) {
+                super.updateItem(channel, empty);
+                if (empty || channel == null) {
+                    setText(null);
+                } else {
+                    // Pour les canaux normaux, on affiche #nom
+                    setText("# " + channel.getName());
+                }
             }
         });
     }
@@ -75,7 +116,9 @@ public class SidebarController implements ISessionController.ISessionControllerO
         Set<Channel> allChannels = mChannelController.getAllChannels();
         Set<User> allUsers = mSessionController.getAllUsers();
 
+        // La liste des canaux n'affiche que les canaux persistants (non-DM)
         channels.setAll(allChannels);
+        
         users.setAll(allUsers);
     }
 
@@ -107,14 +150,41 @@ public class SidebarController implements ISessionController.ISessionControllerO
 
     @Override
     public void onChannelSelected(Channel channel) {
-        // Sélectionner le canal dans la liste si ce n'est pas déjà fait
-        if (channel != null && !channel.equals(channelListView.getSelectionModel().getSelectedItem())) {
-            channelListView.getSelectionModel().select(channel);
+        if (channel == null) {
+            channelListView.getSelectionModel().clearSelection();
+            userListView.getSelectionModel().clearSelection();
+            return;
+        }
+
+        if (channel.isDirectMessage()) {
+            channelListView.getSelectionModel().clearSelection();
+            
+            User currentUser = mSessionController.getCurrentUser();
+            if (currentUser != null) {
+                Optional<User> otherUser = channel.getUsers().stream()
+                        .filter(u -> !u.getUuid().equals(currentUser.getUuid()))
+                        .findFirst();
+                otherUser.ifPresent(user -> {
+                    if (!user.equals(userListView.getSelectionModel().getSelectedItem())) {
+                        userListView.getSelectionModel().select(user);
+                    }
+                });
+            }
+        } else {
+            userListView.getSelectionModel().clearSelection();
+            if (!channel.equals(channelListView.getSelectionModel().getSelectedItem())) {
+                channelListView.getSelectionModel().select(channel);
+            }
         }
     }
 
     @Override
     public void onUsersUpdated() {
         updateLists();
+    }
+
+    @Override
+    public void onMessageReceived(Message message) {
+        // Pas d'action nécessaire ici, géré par SidebarView
     }
 }

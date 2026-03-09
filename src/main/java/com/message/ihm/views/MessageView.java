@@ -1,8 +1,10 @@
 package com.message.ihm.views;
 
 import com.message.datamodel.Message;
+import com.message.ihm.controllers.IChatController;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -21,12 +23,15 @@ public class MessageView extends HBox {
     private final String COLOR_BACKGROUND_SELF = "#40444B";
     private final String COLOR_ACCENT = "#5865F2";
 
-    public MessageView(Message message, boolean isCurrentUser) {
+    private final IChatController mChatController;
+
+    public MessageView(Message message, boolean isCurrentUser, IChatController chatController) {
+        this.mChatController = chatController;
         initUI(message, isCurrentUser);
     }
 
     public MessageView(Message message) {
-        this(message, false);
+        this(message, false, null);
     }
 
     private void initUI(Message message, boolean isCurrentUser) {
@@ -56,6 +61,7 @@ public class MessageView extends HBox {
         // Conteneur message (droite)
         VBox messageBox = new VBox(3);
         messageBox.setAlignment(Pos.TOP_LEFT);
+        HBox.setHgrow(messageBox, Priority.ALWAYS); // Permet au messageBox de prendre l'espace restant
 
         // Header (nom + date)
         HBox header = new HBox(8);
@@ -79,9 +85,40 @@ public class MessageView extends HBox {
         messageContent.setWrapText(true);
         messageContent.setTextFill(Color.web(COLOR_TEXT));
         messageContent.setFont(Font.font("Segoe UI", 14));
+        
+        // Style italique si message supprimé
+        if ("Message supprimé.".equals(message.getText())) {
+             messageContent.setFont(Font.font("Segoe UI", javafx.scene.text.FontPosture.ITALIC, 14));
+             messageContent.setTextFill(Color.web(COLOR_TEXT_MUTED));
+        }
 
         messageBox.getChildren().addAll(header, messageContent);
 
-        this.getChildren().addAll(avatarPane, messageBox);
+        // Bouton de suppression (visible au survol si c'est l'utilisateur courant)
+        Button deleteButton = new Button("🗑"); // Icône corbeille
+        deleteButton.setStyle("-fx-background-color: transparent; -fx-text-fill: #ED4245; -fx-font-size: 14px; -fx-cursor: hand;");
+        deleteButton.setVisible(false);
+        
+        // Action de suppression
+        deleteButton.setOnAction(e -> {
+            if (mChatController != null) {
+                mChatController.deleteMessage(message);
+            }
+        });
+
+        // Gestion du hover sur le message entier
+        this.setOnMouseEntered(e -> {
+            if (isCurrentUser && !"Message supprimé.".equals(message.getText())) {
+                deleteButton.setVisible(true);
+                this.setStyle("-fx-background-color: #32353B;"); // Légèrement plus foncé au survol
+            }
+        });
+
+        this.setOnMouseExited(e -> {
+            deleteButton.setVisible(false);
+            this.setStyle("-fx-background-color: " + bgColor + ";");
+        });
+
+        this.getChildren().addAll(avatarPane, messageBox, deleteButton);
     }
 }

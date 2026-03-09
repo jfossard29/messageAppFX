@@ -29,6 +29,7 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
     private Button mInviteButton;
     private Button mLeaveButton;
     private Button mDeleteButton;
+    private Button mManageButton; // Nouveau bouton
     private VBox mMessagesBox;
     private ScrollPane mScrollPane;
     private TextField mInputField;
@@ -72,6 +73,17 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
         mInviteButton.setManaged(false);
         mInviteButton.setOnAction(e -> openInviteDialog());
 
+        // Bouton Gérer (Nouveau)
+        mManageButton = new Button("Gérer");
+        mManageButton.setStyle("""
+                -fx-background-color: rgb(79, 84, 92);
+                -fx-text-fill: white;
+                -fx-font-weight: bold;
+                """);
+        mManageButton.setVisible(false);
+        mManageButton.setManaged(false);
+        mManageButton.setOnAction(e -> openManageDialog());
+
         // Bouton Quitter
         mLeaveButton = new Button("Quitter");
         mLeaveButton.setStyle("""
@@ -94,7 +106,7 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
         mDeleteButton.setManaged(false);
         mDeleteButton.setOnAction(e -> confirmDeleteChannel());
 
-        HBox header = new HBox(10, mChannelTitle, new Region(), mInviteButton, mLeaveButton, mDeleteButton);
+        HBox header = new HBox(10, mChannelTitle, new Region(), mInviteButton, mManageButton, mLeaveButton, mDeleteButton);
         HBox.setHgrow(header.getChildren().get(1), Priority.ALWAYS);
         header.setStyle("-fx-background-color: rgb(47,49,54);");
         header.setAlignment(Pos.CENTER_LEFT);
@@ -186,6 +198,8 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
             // Reset buttons
             mInviteButton.setVisible(false);
             mInviteButton.setManaged(false);
+            mManageButton.setVisible(false);
+            mManageButton.setManaged(false);
             mLeaveButton.setVisible(false);
             mLeaveButton.setManaged(false);
             mDeleteButton.setVisible(false);
@@ -196,7 +210,12 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
                 return;
             }
 
-            mChannelTitle.setText("# " + channel.getName());
+            // Affichage du titre
+            if (channel.isDirectMessage()) {
+                mChannelTitle.setText("@ " + channel.getName());
+            } else {
+                mChannelTitle.setText("# " + channel.getName());
+            }
 
             // Gestion des boutons
             User currentUser = mSessionController.getCurrentUser();
@@ -206,20 +225,26 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
             
             boolean isPrivate = channel.isPrivate();
             
-            // Inviter : Créateur + Privé
-            if (isCreator && isPrivate) {
+            // Inviter : Créateur + Privé (mais pas DM)
+            if (isCreator && isPrivate && !channel.isDirectMessage()) {
                 mInviteButton.setVisible(true);
                 mInviteButton.setManaged(true);
             }
 
-            // Supprimer : Créateur (Privé ou Public)
-            if (isCreator) {
+            // Gérer : Créateur + Privé (mais pas DM)
+            if (isCreator && isPrivate && !channel.isDirectMessage()) {
+                mManageButton.setVisible(true);
+                mManageButton.setManaged(true);
+            }
+
+            // Supprimer : Créateur (Privé ou Public) (mais pas DM)
+            if (isCreator && !channel.isDirectMessage()) {
                 mDeleteButton.setVisible(true);
                 mDeleteButton.setManaged(true);
             }
 
-            // Quitter : Membre (non créateur) + Privé
-            if (!isCreator && isPrivate) {
+            // Quitter : Membre (non créateur) + Privé (mais pas DM)
+            if (!isCreator && isPrivate && !channel.isDirectMessage()) {
                 // Vérifier si membre (normalement oui si on voit le canal)
                 mLeaveButton.setVisible(true);
                 mLeaveButton.setManaged(true);
@@ -240,7 +265,8 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
                 boolean isCurrentUser = currentUser != null &&
                         msg.getSender().getUserTag().equals(currentUser.getUserTag());
 
-                MessageView messageView = new MessageView(msg, isCurrentUser);
+                // On passe le contrôleur pour permettre la suppression
+                MessageView messageView = new MessageView(msg, isCurrentUser, mChatController);
                 mMessagesBox.getChildren().add(messageView);
             }
 
@@ -257,6 +283,20 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
                     mChannelController,
                     allUsers,
                     currentChannel
+            );
+            dialog.showAndWait();
+        }
+    }
+
+    private void openManageDialog() {
+        Channel currentChannel = mSessionController.getSelectedChannel();
+        User currentUser = mSessionController.getCurrentUser();
+        if (currentChannel != null && currentUser != null) {
+            ManageChannelDialog dialog = new ManageChannelDialog(
+                    (Stage) getScene().getWindow(),
+                    mChannelController,
+                    currentChannel,
+                    currentUser
             );
             dialog.showAndWait();
         }
@@ -307,5 +347,10 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
     @Override
     public void onUsersUpdated() {
         // Géré ailleurs
+    }
+
+    @Override
+    public void onMessageReceived(Message message) {
+        // Pas d'action nécessaire ici, géré par SidebarView
     }
 }
