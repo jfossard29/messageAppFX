@@ -18,7 +18,7 @@ javafx {
 
 application {
     mainClass.set("com.Main")
-}
+} 
 
 tasks.register<Jar>("fatJar") {
     group = "build"
