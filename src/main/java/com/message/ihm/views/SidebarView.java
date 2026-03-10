@@ -10,10 +10,13 @@ import com.message.ihm.controllers.SidebarController;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.util.HashSet;
@@ -298,29 +301,36 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
 
         String normalStyle = "-fx-background-color: transparent; -fx-text-fill: rgb(142,146,151);";
         String hoverStyle = "-fx-background-color: rgb(50,53,59); -fx-text-fill: white;";
-        
-        // Style pour les canaux avec messages non lus (pastille blanche)
+        String selectedStyle = "-fx-background-color: rgb(57,60,67); -fx-text-fill: white;";
+        String unreadStyle = "-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold;";
+
+        // Apply base style first to prevent white background flash
+        btn.setStyle(normalStyle);
+
+        // Style for unread messages
         if (unreadChannels.contains(c.getUuid())) {
             btn.setGraphic(new Circle(4, Color.WHITE));
             btn.setGraphicTextGap(8);
-            btn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold;");
+            btn.setStyle(unreadStyle);
+        } else {
+            btn.setGraphic(null); // Ensure graphic is removed if not unread
         }
 
-        // Si c'est le canal sélectionné, on le met en surbrillance
-        if (mSelectedChannel != null && mSelectedChannel.getUuid().equals(c.getUuid())) {
-             btn.setStyle("-fx-background-color: rgb(57,60,67); -fx-text-fill: white;");
+        // Style for selected channel (overrides others)
+        if (mSelectedChannel != null && !mSelectedChannel.isDirectMessage() && mSelectedChannel.getUuid().equals(c.getUuid())) {
+             btn.setStyle(selectedStyle);
         }
 
         btn.setOnMouseEntered(e -> {
-            if (mSelectedChannel == null || !mSelectedChannel.getUuid().equals(c.getUuid())) {
+            if (mSelectedChannel == null || mSelectedChannel.isDirectMessage() || !mSelectedChannel.getUuid().equals(c.getUuid())) {
                 btn.setStyle(hoverStyle);
             }
         });
         btn.setOnMouseExited(e -> {
-            if (mSelectedChannel != null && mSelectedChannel.getUuid().equals(c.getUuid())) {
-                btn.setStyle("-fx-background-color: rgb(57,60,67); -fx-text-fill: white;");
+            if (mSelectedChannel != null && !mSelectedChannel.isDirectMessage() && mSelectedChannel.getUuid().equals(c.getUuid())) {
+                btn.setStyle(selectedStyle);
             } else if (unreadChannels.contains(c.getUuid())) {
-                btn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold;");
+                btn.setStyle(unreadStyle);
             } else {
                 btn.setStyle(normalStyle);
             }
@@ -388,10 +398,58 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
             }
         });
 
-        // Ajout de l'action au clic
-        box.setOnMouseClicked(e -> mController.selectDmChannel(u));
+        // --- Context Menu ---
+        ContextMenu contextMenu = new ContextMenu();
+        contextMenu.setStyle("-fx-background-color: #18191c; -fx-background-radius: 6; -fx-padding: 5;");
+
+        Label itemLabel = new Label("Voir le profil");
+        itemLabel.setTextFill(Color.web("#b9bbbe"));
+        itemLabel.setStyle("-fx-font-size: 14px;");
+        itemLabel.setMaxWidth(Double.MAX_VALUE);
+        
+        HBox itemBox = new HBox(itemLabel);
+        itemBox.setPadding(new Insets(8, 12, 8, 12));
+        itemBox.setStyle("-fx-background-color: transparent; -fx-background-radius: 4;");
+        itemBox.setAlignment(Pos.CENTER_LEFT);
+        
+        itemBox.hoverProperty().addListener((obs, wasHovered, isHovered) -> {
+            if (isHovered) {
+                itemBox.setStyle("-fx-background-color: #5865F2; -fx-background-radius: 4;");
+                itemLabel.setTextFill(Color.WHITE);
+            } else {
+                itemBox.setStyle("-fx-background-color: transparent; -fx-background-radius: 4;");
+                itemLabel.setTextFill(Color.web("#b9bbbe"));
+            }
+        });
+
+        CustomMenuItem profileItem = new CustomMenuItem(itemBox);
+        profileItem.setHideOnClick(true);
+        profileItem.setOnAction(e -> showProfileDialog(u));
+
+        contextMenu.getItems().add(profileItem);
+
+        box.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                mController.selectDmChannel(u);
+            } else if (e.getButton() == MouseButton.SECONDARY) {
+                contextMenu.show(box, e.getScreenX(), e.getScreenY());
+            }
+        });
 
         return box;
+    }
+    
+    private void showProfileDialog(User user) {
+        Stage dialogStage = new Stage();
+        dialogStage.initModality(Modality.WINDOW_MODAL);
+        dialogStage.initOwner(this.getScene().getWindow());
+        dialogStage.setTitle("Profil de " + user.getName());
+
+        ProfileView profileView = new ProfileView(user);
+        Scene scene = new Scene(profileView, 350, 400);
+        
+        dialogStage.setScene(scene);
+        dialogStage.showAndWait();
     }
 
     /* ================= OBSERVER ================= */

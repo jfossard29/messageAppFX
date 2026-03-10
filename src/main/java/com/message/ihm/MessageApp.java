@@ -2,7 +2,6 @@ package com.message.ihm;
 
 import com.message.core.DataManager;
 import com.message.core.session.Session;
-import com.message.datamodel.User;
 import com.message.ihm.controllers.MessageAppController;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -48,6 +47,7 @@ public class MessageApp extends Application {
 
         Session session = new Session(sDataManager);
         mController = new MessageAppController(sDataManager, session);
+        mController.setPrimaryStage(primaryStage); // Pass stage to controller
         mController.initView(mainContainer);
 
         // Création de la scène et affichage
