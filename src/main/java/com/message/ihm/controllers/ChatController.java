@@ -5,48 +5,20 @@ import com.message.core.session.ISession;
 import com.message.datamodel.Channel;
 import com.message.datamodel.Message;
 import com.message.datamodel.User;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
 
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class ChatController implements IChatController, ISessionController.ISessionControllerObserver {
-
-    @FXML private Label channelTitle;
-    @FXML private ListView<Message> messageListView;
-    @FXML private TextField messageField;
+public class ChatController implements IChatController {
 
     private final DataManager mDataManager;
     private final ISession mSession;
-    private Channel mCurrentChannel;
-
-    private ObservableList<Message> messages = FXCollections.observableArrayList();
 
     public ChatController(DataManager dataManager, ISession session) {
         this.mDataManager = dataManager;
         this.mSession = session;
-    }
-
-    @FXML
-    public void initialize() {
-        messageListView.setItems(messages);
-        // TODO: Ajouter un CellFactory pour personnaliser l'affichage des messages
-    }
-
-    @FXML
-    public void onSendMessage() {
-        String text = messageField.getText();
-        if (text != null && !text.isEmpty() && mCurrentChannel != null) {
-            sendMessage(text, mCurrentChannel);
-            messageField.clear();
-        }
     }
 
     @Override
@@ -127,26 +99,5 @@ public class ChatController implements IChatController, ISessionController.ISess
                     .filter(m -> m.getRecipient().equals(channelUuid))
                     .collect(Collectors.toSet());
         }
-    }
-
-    @Override
-    public void onChannelSelected(Channel channel) {
-        this.mCurrentChannel = channel;
-        if (channel != null) {
-            // La logique d'affichage du titre est dans ChatView, ici on met juste à jour les messages
-            messages.setAll(getMessagesForChannel(channel));
-        } else {
-            messages.clear();
-        }
-    }
-
-    @Override
-    public void onUsersUpdated() {
-        // Pas d'action directe dans la vue de chat
-    }
-
-    @Override
-    public void onMessageReceived(Message message) {
-        // Pas d'action nécessaire ici, géré par onChannelSelected si pertinent
     }
 }

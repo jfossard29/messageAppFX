@@ -3,7 +3,6 @@ package com.message.ihm.views;
 import com.message.datamodel.User;
 import com.message.ihm.controllers.IProfileController;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -17,12 +16,11 @@ public class ProfileDialog extends Stage {
 
     private final IProfileController controller;
     private final User currentUser;
-    private TextField nameField;
 
-    private final String COLOR_BACKGROUND = "#36393F";
-    private final String COLOR_INPUT = "#40444B";
-    private final String COLOR_ACCENT = "#5865F2";
-    private final String COLOR_DANGER = "#ED4245";
+    private static final String COLOR_BACKGROUND = "#36393F";
+    private static final String COLOR_INPUT = "#40444B";
+    private static final String COLOR_ACCENT = "#5865F2";
+    private static final String COLOR_DANGER = "#ED4245";
 
     public ProfileDialog(Stage owner, IProfileController controller, User currentUser) {
         this.controller = controller;
@@ -47,7 +45,7 @@ public class ProfileDialog extends Stage {
         nameLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
 
         // Champ Nom
-        nameField = new TextField(currentUser.getName());
+        TextField nameField = new TextField(currentUser.getName());
         nameField.setStyle(
                 "-fx-background-color: " + COLOR_INPUT + ";" +
                         "-fx-text-fill: white;" +
@@ -113,9 +111,9 @@ public class ProfileDialog extends Stage {
         alert.setTitle("Confirmation de suppression");
         alert.setHeaderText("Supprimer votre compte ?");
         alert.setContentText(
-                "Êtes-vous sûr de vouloir supprimer votre compte ?\n" +
-                        "Tous vos messages seront anonymisés.\n" +
-                        "Cette action est irréversible."
+                new StringBuilder().append("Êtes-vous sûr de vouloir supprimer votre compte ?\n")
+                                   .append("Tous vos messages seront anonymisés.\n")
+                                   .append("Cette action est irréversible.").toString()
         );
 
         alert.showAndWait().ifPresent(result -> {

@@ -29,7 +29,6 @@ public class InviteUserDialog extends Stage {
     private final Set<User> mSelectedUsers = new HashSet<>();
 
     private ListView<User> mUsersList;
-    private TextField mSearchUserField;
 
     public InviteUserDialog(Stage owner, IChannelController controller, Set<User> allUsers, Channel currentChannel) {
 
@@ -66,7 +65,7 @@ public class InviteUserDialog extends Stage {
 
         /* ===== Search ===== */
 
-        mSearchUserField = new TextField();
+        TextField mSearchUserField = new TextField();
         mSearchUserField.setPromptText("Rechercher un utilisateur...");
         mSearchUserField.setStyle("""
                 -fx-background-color: rgb(64,68,75);

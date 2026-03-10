@@ -4,7 +4,6 @@ import com.message.common.Constants;
 import com.message.datamodel.User;
 import com.message.ihm.controllers.IChannelController;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -30,7 +29,6 @@ public class AddChannelDialog extends Stage {
     private TextField mNameField;
     private CheckBox mPrivateCheckBox;
     private ListView<User> mUsersList;
-    private TextField mSearchUserField;
     private VBox mUserSelectionBox;
 
     public AddChannelDialog(Stage owner, IChannelController controller, Set<User> availableUsers, User currentUser) {
@@ -78,7 +76,7 @@ public class AddChannelDialog extends Stage {
         mUserSelectionBox.setVisible(false);
         mUserSelectionBox.setManaged(false);
 
-        mSearchUserField = new TextField();
+        TextField mSearchUserField = new TextField();
         mSearchUserField.setPromptText("Rechercher un utilisateur...");
         mSearchUserField.setStyle("""
                 -fx-background-color: rgb(64,68,75);

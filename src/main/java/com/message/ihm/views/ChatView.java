@@ -14,6 +14,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -29,12 +30,12 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
     private Button mInviteButton;
     private Button mLeaveButton;
     private Button mDeleteButton;
-    private Button mManageButton; // Nouveau bouton
+    private Button mManageButton;
     private VBox mMessagesBox;
     private ScrollPane mScrollPane;
-    private TextField mInputField;
-    private Label mCharCounter;
-    private Button mSendButton;
+    private TextField mSearchMessagesField;
+
+    private List<Message> mCurrentChannelMessages = new ArrayList<>();
 
     private static final int MAX_CHARS = 200;
 
@@ -48,66 +49,52 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
 
     private void initGui() {
 
-        // Couleurs
-        Color COLOR_MAIN = Color.rgb(54, 57, 63);
-        Color COLOR_HEADER = Color.rgb(47, 49, 54);
-        Color COLOR_TEXT = Color.rgb(220, 221, 222);
-
         this.setStyle("-fx-background-color: rgb(54,57,63);");
 
         /* ================= HEADER ================= */
 
         mChannelTitle = new Label("Sélectionnez un canal");
-        mChannelTitle.setTextFill(COLOR_TEXT);
+        mChannelTitle.setTextFill(Color.rgb(220, 221, 222));
         mChannelTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
         mChannelTitle.setPadding(new Insets(15));
 
+        mSearchMessagesField = new TextField();
+        mSearchMessagesField.setPromptText("Rechercher message (3 min)...");
+        mSearchMessagesField.setStyle("-fx-background-color: rgb(32,34,37); -fx-text-fill: white; -fx-prompt-text-fill: gray;");
+        mSearchMessagesField.setVisible(false);
+        mSearchMessagesField.setManaged(false);
+        mSearchMessagesField.textProperty().addListener((obs, oldVal, newVal) -> applyMessageFilter());
+
         // Bouton Inviter
         mInviteButton = new Button("Inviter...");
-        mInviteButton.setStyle("""
-                -fx-background-color: rgb(88,101,242);
-                -fx-text-fill: white;
-                -fx-font-weight: bold;
-                """);
+        mInviteButton.setStyle("-fx-background-color: rgb(88,101,242); -fx-text-fill: white; -fx-font-weight: bold;");
         mInviteButton.setVisible(false);
         mInviteButton.setManaged(false);
         mInviteButton.setOnAction(e -> openInviteDialog());
 
-        // Bouton Gérer (Nouveau)
+        // Bouton Gérer
         mManageButton = new Button("Gérer");
-        mManageButton.setStyle("""
-                -fx-background-color: rgb(79, 84, 92);
-                -fx-text-fill: white;
-                -fx-font-weight: bold;
-                """);
+        mManageButton.setStyle("-fx-background-color: rgb(79, 84, 92); -fx-text-fill: white; -fx-font-weight: bold;");
         mManageButton.setVisible(false);
         mManageButton.setManaged(false);
         mManageButton.setOnAction(e -> openManageDialog());
 
         // Bouton Quitter
         mLeaveButton = new Button("Quitter");
-        mLeaveButton.setStyle("""
-                -fx-background-color: rgb(237,66,69);
-                -fx-text-fill: white;
-                -fx-font-weight: bold;
-                """);
+        mLeaveButton.setStyle("-fx-background-color: rgb(237,66,69); -fx-text-fill: white; -fx-font-weight: bold;");
         mLeaveButton.setVisible(false);
         mLeaveButton.setManaged(false);
         mLeaveButton.setOnAction(e -> confirmLeaveChannel());
 
         // Bouton Supprimer
         mDeleteButton = new Button("Supprimer");
-        mDeleteButton.setStyle("""
-                -fx-background-color: rgb(237,66,69);
-                -fx-text-fill: white;
-                -fx-font-weight: bold;
-                """);
+        mDeleteButton.setStyle("-fx-background-color: rgb(237,66,69); -fx-text-fill: white; -fx-font-weight: bold;");
         mDeleteButton.setVisible(false);
         mDeleteButton.setManaged(false);
         mDeleteButton.setOnAction(e -> confirmDeleteChannel());
 
-        HBox header = new HBox(10, mChannelTitle, new Region(), mInviteButton, mManageButton, mLeaveButton, mDeleteButton);
-        HBox.setHgrow(header.getChildren().get(1), Priority.ALWAYS);
+        HBox header = new HBox(10, mChannelTitle, mSearchMessagesField, new Region(), mInviteButton, mManageButton, mLeaveButton, mDeleteButton);
+        HBox.setHgrow(header.getChildren().get(2), Priority.ALWAYS);
         header.setStyle("-fx-background-color: rgb(47,49,54);");
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(0, 15, 0, 0));
@@ -132,44 +119,27 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
 
         /* ================= INPUT ================= */
 
-        mInputField = new TextField();
+        TextField mInputField = new TextField();
         mInputField.setPromptText("Écrire un message...");
-        mInputField.setStyle("""
-                -fx-background-color: rgb(64,68,75);
-                -fx-text-fill: rgb(220,221,222);
-                -fx-prompt-text-fill: gray;
-                """);
+        mInputField.setStyle("-fx-background-color: rgb(64,68,75); -fx-text-fill: rgb(220,221,222); -fx-prompt-text-fill: gray;");
 
-        mCharCounter = new Label("0/" + MAX_CHARS);
+        Label mCharCounter = new Label("0/" + MAX_CHARS);
         mCharCounter.setTextFill(Color.GRAY);
         mCharCounter.setStyle("-fx-font-size: 10px;");
 
-        mSendButton = new Button("Envoyer");
-        mSendButton.setStyle("""
-                -fx-background-color: rgb(88,101,242);
-                -fx-text-fill: white;
-                -fx-font-weight: bold;
-                """);
-        mSendButton.setDisable(true); // Initialement désactivé car champ vide
+        Button mSendButton = new Button("Envoyer");
+        mSendButton.setStyle("-fx-background-color: rgb(88,101,242); -fx-text-fill: white; -fx-font-weight: bold;");
+        mSendButton.setDisable(true);
 
-        // Listener pour le compteur et la validation (MAX 200)
         mInputField.textProperty().addListener((obs, oldVal, newVal) -> {
             int length = newVal.length();
             mCharCounter.setText(length + "/" + MAX_CHARS);
-
             boolean isTooLong = length > MAX_CHARS;
             boolean isEmpty = length == 0;
-
-            if (isTooLong) {
-                mCharCounter.setTextFill(Color.RED);
-            } else {
-                mCharCounter.setTextFill(Color.GRAY);
-            }
-
+            mCharCounter.setTextFill(isTooLong ? Color.RED : Color.GRAY);
             mSendButton.setDisable(isEmpty || isTooLong);
         });
 
-        // Action d'envoi
         Runnable sendAction = () -> {
             String text = mInputField.getText();
             if (!text.isEmpty() && text.length() <= MAX_CHARS) {
@@ -191,87 +161,106 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
 
     @Override
     public void onChannelSelected(Channel channel) {
-
         Platform.runLater(() -> {
-            mMessagesBox.getChildren().clear();
-
-            // Reset buttons
-            mInviteButton.setVisible(false);
-            mInviteButton.setManaged(false);
-            mManageButton.setVisible(false);
-            mManageButton.setManaged(false);
-            mLeaveButton.setVisible(false);
-            mLeaveButton.setManaged(false);
-            mDeleteButton.setVisible(false);
-            mDeleteButton.setManaged(false);
+            resetUI();
 
             if (channel == null) {
                 mChannelTitle.setText("Sélectionnez un canal");
+                mSearchMessagesField.setVisible(false);
+                mSearchMessagesField.setManaged(false);
+                mSearchMessagesField.clear();
                 return;
             }
 
-            // Affichage du titre
-            if (channel.isDirectMessage()) {
-                mChannelTitle.setText("@ " + channel.getName());
-            } else {
-                mChannelTitle.setText("# " + channel.getName());
-            }
-
-            // Gestion des boutons
+            mSearchMessagesField.setVisible(true);
+            mSearchMessagesField.setManaged(true);
             User currentUser = mSessionController.getCurrentUser();
-            boolean isCreator = currentUser != null && 
-                                channel.getCreator() != null && 
-                                channel.getCreator().getUuid().equals(currentUser.getUuid());
             
-            boolean isPrivate = channel.isPrivate();
+            updateHeader(channel);
+            updateButtons(channel, currentUser);
+            loadAndDisplayMessages(channel);
+        });
+    }
+
+    private void resetUI() {
+        mMessagesBox.getChildren().clear();
+        mInviteButton.setVisible(false);
+        mInviteButton.setManaged(false);
+        mManageButton.setVisible(false);
+        mManageButton.setManaged(false);
+        mLeaveButton.setVisible(false);
+        mLeaveButton.setManaged(false);
+        mDeleteButton.setVisible(false);
+        mDeleteButton.setManaged(false);
+    }
+
+    private void updateHeader(Channel channel) {
+        if (channel.isDirectMessage()) {
+            mChannelTitle.setText("@ " + channel.getName());
+        } else {
+            mChannelTitle.setText("# " + channel.getName());
+        }
+    }
+
+    private void updateButtons(Channel channel, User currentUser) {
+        if (currentUser == null || channel.isDirectMessage()) return;
+
+        boolean isCreator = channel.getCreator() != null && channel.getCreator().getUuid().equals(currentUser.getUuid());
+        boolean isPrivate = channel.isPrivate();
+
+        if (isCreator) {
+            mDeleteButton.setVisible(true);
+            mDeleteButton.setManaged(true);
             
-            // Inviter : Créateur + Privé (mais pas DM)
-            if (isCreator && isPrivate && !channel.isDirectMessage()) {
+            if (isPrivate) {
                 mInviteButton.setVisible(true);
                 mInviteButton.setManaged(true);
-            }
-
-            // Gérer : Créateur + Privé (mais pas DM)
-            if (isCreator && isPrivate && !channel.isDirectMessage()) {
                 mManageButton.setVisible(true);
                 mManageButton.setManaged(true);
             }
+        } else if (isPrivate) {
+            mLeaveButton.setVisible(true);
+            mLeaveButton.setManaged(true);
+        }
+    }
 
-            // Supprimer : Créateur (Privé ou Public) (mais pas DM)
-            if (isCreator && !channel.isDirectMessage()) {
-                mDeleteButton.setVisible(true);
-                mDeleteButton.setManaged(true);
-            }
+    private void loadAndDisplayMessages(Channel channel) {
+        Set<Message> messagesSet = mChatController.getMessagesForChannel(channel);
+        this.mCurrentChannelMessages = messagesSet.stream()
+                .sorted(Comparator.comparingLong(Message::getEmissionDate))
+                .collect(Collectors.toList());
+        
+        applyMessageFilter();
+    }
 
-            // Quitter : Membre (non créateur) + Privé (mais pas DM)
-            if (!isCreator && isPrivate && !channel.isDirectMessage()) {
-                // Vérifier si membre (normalement oui si on voit le canal)
-                mLeaveButton.setVisible(true);
-                mLeaveButton.setManaged(true);
-            }
+    private void applyMessageFilter() {
+        User currentUser = mSessionController.getCurrentUser();
+        String query = mSearchMessagesField.getText();
+        List<Message> messagesToDisplay;
 
-            Set<Message> messagesSet = mChatController.getMessagesForChannel(channel);
-
-            List<Message> sortedMessages = messagesSet.stream()
-                    .sorted(Comparator.comparingLong(Message::getEmissionDate))
+        if (query == null || query.length() < 3) {
+            messagesToDisplay = mCurrentChannelMessages;
+        } else {
+            String lowerCaseQuery = query.toLowerCase();
+            messagesToDisplay = mCurrentChannelMessages.stream()
+                    .filter(msg -> msg.getText().toLowerCase().contains(lowerCaseQuery))
                     .collect(Collectors.toList());
+        }
 
-            Region spacer = new Region();
-            VBox.setVgrow(spacer, Priority.ALWAYS);
-            mMessagesBox.getChildren().add(spacer);
+        mMessagesBox.getChildren().clear();
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, Priority.ALWAYS);
+        mMessagesBox.getChildren().add(spacer);
 
-            for (Message msg : sortedMessages) {
+        for (Message msg : messagesToDisplay) {
+            boolean isCurrentUser = currentUser != null &&
+                    msg.getSender().getUserTag().equals(currentUser.getUserTag());
 
-                boolean isCurrentUser = currentUser != null &&
-                        msg.getSender().getUserTag().equals(currentUser.getUserTag());
+            MessageView messageView = new MessageView(msg, isCurrentUser, mChatController);
+            mMessagesBox.getChildren().add(messageView);
+        }
 
-                // On passe le contrôleur pour permettre la suppression
-                MessageView messageView = new MessageView(msg, isCurrentUser, mChatController);
-                mMessagesBox.getChildren().add(messageView);
-            }
-
-            scrollToBottom();
-        });
+        scrollToBottom();
     }
 
     private void openInviteDialog() {
@@ -315,7 +304,6 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
             alert.showAndWait().ifPresent(result -> {
                 if (result == ButtonType.OK) {
                     mChannelController.leaveChannel(currentChannel, currentUser);
-                    // La sélection du canal sera mise à jour automatiquement via les observers ou on peut forcer un reset
                     mSessionController.selectChannel(null);
                 }
             });
@@ -351,6 +339,26 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
 
     @Override
     public void onMessageReceived(Message message) {
-        // Pas d'action nécessaire ici, géré par SidebarView
+        // Pour une mise à jour en temps réel, on pourrait recharger les messages
+        // et ré-appliquer le filtre si un nouveau message arrive.
+        Channel selectedChannel = mSessionController.getSelectedChannel();
+        if (selectedChannel != null) {
+            // On vérifie si le message appartient au canal actuel
+            boolean isDM = selectedChannel.isDirectMessage();
+            User currentUser = mSessionController.getCurrentUser();
+
+            if (isDM && currentUser != null) {
+                boolean messageIsForMe = message.getRecipient().equals(currentUser.getUuid());
+                boolean selectedUserIsSender = selectedChannel.getUsers().stream()
+                        .anyMatch(u -> u.getUuid().equals(message.getSender().getUuid()));
+                if (messageIsForMe && selectedUserIsSender) {
+                    loadAndDisplayMessages(selectedChannel);
+                }
+            } else if (!isDM) {
+                if (message.getRecipient().equals(selectedChannel.getUuid())) {
+                    loadAndDisplayMessages(selectedChannel);
+                }
+            }
+        }
     }
 }

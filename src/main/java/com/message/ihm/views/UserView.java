@@ -14,8 +14,9 @@ import javafx.scene.text.Font;
  */
 public class UserView extends HBox {
 
-    private final Color COLOR_TEXT = Color.web("#DCDCDE");
-    private final Color COLOR_TEXT_MUTED = Color.web("#8E9297");
+    private static final Color COLOR_TEXT = Color.web("#DCDCDE");
+    private static final Color COLOR_TEXT_MUTED = Color.web("#8E9297");
+    private static final String FONT_FAMILY = "Segoe UI";
 
     public UserView(User user) {
         this.initGui(user);
@@ -31,17 +32,17 @@ public class UserView extends HBox {
         Circle avatarCircle = new Circle(20, Color.web("#5865F2")); // Rayon 20
         Label avatarLabel = new Label(user.getName().substring(0, 1).toUpperCase());
         avatarLabel.setTextFill(Color.WHITE);
-        avatarLabel.setFont(Font.font("Segoe UI", 20));
+        avatarLabel.setFont(Font.font(FONT_FAMILY, 20));
         StackPane avatarStack = new StackPane(avatarCircle, avatarLabel);
 
         // VBox pour nom et tag
         VBox userInfoBox = new VBox(2);
         Label nameLabel = new Label(user.getName());
-        nameLabel.setFont(Font.font("Segoe UI", 16));
+        nameLabel.setFont(Font.font(FONT_FAMILY, 16));
         nameLabel.setTextFill(COLOR_TEXT);
 
         Label tagLabel = new Label("@" + user.getUserTag());
-        tagLabel.setFont(Font.font("Segoe UI", 12));
+        tagLabel.setFont(Font.font(FONT_FAMILY, 12));
         tagLabel.setTextFill(COLOR_TEXT_MUTED);
 
         userInfoBox.getChildren().addAll(nameLabel, tagLabel);

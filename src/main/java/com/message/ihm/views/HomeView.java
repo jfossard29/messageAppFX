@@ -5,6 +5,7 @@ import com.message.ihm.controllers.IChannelController;
 import com.message.ihm.controllers.IChatController;
 import com.message.ihm.controllers.IProfileController;
 import com.message.ihm.controllers.ISessionController;
+import com.message.ihm.controllers.SidebarController;
 import javafx.scene.layout.BorderPane;
 
 public class HomeView extends BorderPane {
@@ -33,11 +34,8 @@ public class HomeView extends BorderPane {
     private void initGui() {
 
         // Initialisation des sous-vues
-        this.mSidebarView = new SidebarView(
-                mSessionController,
-                mChannelController,
-                mProfileController
-        );
+        SidebarController sidebarController = new SidebarController(mSessionController, mChannelController, mProfileController);
+        this.mSidebarView = new SidebarView(sidebarController);
 
         this.mChatView = new ChatView(
                 mSessionController,

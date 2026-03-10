@@ -15,11 +15,11 @@ public class LoginView extends StackPane {
     private boolean isRegistrationMode = false;
 
     // Couleurs Discord-like
-    private final String COLOR_BACKGROUND = "#36393F";
-    private final String COLOR_PANEL = "#2F3136";
-    private final String COLOR_INPUT = "#40444B";
-    private final String COLOR_TEXT = "#DCDDDE";
-    private final String COLOR_ACCENT = "#5865F2";
+    private static final String COLOR_BACKGROUND = "#36393F";
+    private static final String COLOR_PANEL = "#2F3136";
+    private static final String COLOR_INPUT = "#40444B";
+    private static final String COLOR_TEXT = "#DCDDDE";
+    private static final String COLOR_ACCENT = "#5865F2";
 
     private TextField nomField;
     private TextField tagField;

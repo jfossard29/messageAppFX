@@ -20,11 +20,11 @@ public class MessageAppController implements ISessionObserver {
     private StackPane mainContainer;
 
     // Sous-contrôleurs
-    private LoginController mLoginController;
-    private SessionController mSessionController;
-    private ChannelController mChannelController;
-    private ChatController mChatController;
-    private ProfileController mProfileController;
+    private final LoginController mLoginController;
+    private final SessionController mSessionController;
+    private final ChannelController mChannelController;
+    private final ChatController mChatController;
+    private final ProfileController mProfileController;
 
     // Vues JavaFX
     private LoginView loginView;

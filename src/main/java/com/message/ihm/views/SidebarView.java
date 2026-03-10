@@ -6,6 +6,7 @@ import com.message.datamodel.User;
 import com.message.ihm.controllers.IChannelController;
 import com.message.ihm.controllers.IProfileController;
 import com.message.ihm.controllers.ISessionController;
+import com.message.ihm.controllers.SidebarController;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -15,7 +16,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,9 +24,7 @@ import java.util.stream.Collectors;
 
 public class SidebarView extends BorderPane implements ISessionController.ISessionControllerObserver, IChannelController.IChannelControllerObserver, IProfileController.IProfileControllerObserver {
 
-    private final ISessionController mSessionController;
-    private final IChannelController mChannelController;
-    private final IProfileController mProfileController;
+    private final SidebarController mController;
 
     private User mCurrentUser;
 
@@ -42,17 +40,13 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
     private TextField searchField;
     private Button userProfileBtn;
 
-    public SidebarView(ISessionController sessionController,
-                       IChannelController channelController,
-                       IProfileController profileController) {
+    public SidebarView(SidebarController controller) {
+        this.mController = controller;
 
-        this.mSessionController = sessionController;
-        this.mChannelController = channelController;
-        this.mProfileController = profileController;
-
-        this.mSessionController.addObserver(this);
-        this.mChannelController.addObserver(this);
-        this.mProfileController.addObserver(this);
+        // Register as observer to the underlying controllers
+        this.mController.getSessionController().addObserver(this);
+        this.mController.getChannelController().addObserver(this);
+        this.mController.getProfileController().addObserver(this);
         initGui();
     }
 
@@ -104,7 +98,7 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         addChannelBtn.setOnAction(e -> {
             AddChannelDialog dialog =
                     new AddChannelDialog((Stage) getScene().getWindow(),
-                            mChannelController,
+                            mController.getChannelController(),
                             listAllUsers,
                             mCurrentUser);
             dialog.showAndWait();
@@ -146,7 +140,7 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         userProfileBtn = new Button("Utilisateur");
         userProfileBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight:bold;");
 
-        Label settingsIcon = new Label("\u2699");
+        Label settingsIcon = new Label("⚙");
         settingsIcon.setStyle("-fx-font-size: 16px; -fx-text-fill: white;");
 
         userProfileBtn.setGraphic(settingsIcon);
@@ -159,7 +153,7 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         userProfileBtn.setOnAction(e -> {
             ProfileDialog dialog =
                     new ProfileDialog((Stage) getScene().getWindow(),
-                            mProfileController,
+                            mController.getProfileController(),
                             mCurrentUser);
             dialog.showAndWait();
         });
@@ -171,7 +165,7 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         logoutBtn.setStyle(logoutNormal);
         logoutBtn.setOnMouseEntered(e -> logoutBtn.setStyle(logoutHover));
         logoutBtn.setOnMouseExited(e -> logoutBtn.setStyle(logoutNormal));
-        logoutBtn.setOnAction(e -> mSessionController.logout());
+        logoutBtn.setOnAction(e -> mController.logout());
 
         HBox userPanel = new HBox(10, userProfileBtn, new Region(), logoutBtn);
         HBox.setHgrow(userPanel.getChildren().get(1), Priority.ALWAYS);
@@ -195,8 +189,8 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
     }
 
     public void refreshLists() {
-        listAllUsers = mSessionController.getAllUsers();
-        listAllChannels = mChannelController.getAllChannels();
+        listAllUsers = mController.getUsers();
+        listAllChannels = mController.getChannels();
         filterLists(searchField.getText());
     }
 
@@ -332,7 +326,7 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
             }
         });
 
-        btn.setOnAction(e -> mSessionController.selectChannel(c));
+        btn.setOnAction(e -> mController.selectChannel(c));
 
         return btn;
     }
@@ -395,20 +389,7 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         });
 
         // Ajout de l'action au clic
-        box.setOnMouseClicked(e -> {
-            if (mCurrentUser != null && !mCurrentUser.getUuid().equals(u.getUuid())) {
-                // Création d'un canal "fantôme" pour le DM
-                List<User> participants = new ArrayList<>();
-                participants.add(mCurrentUser);
-                participants.add(u);
-
-                // Le nom est celui de l'autre utilisateur, pour l'affichage dans le header du chat
-                Channel phantomChannel = new Channel(mCurrentUser, u.getName(), participants);
-                phantomChannel.setDirectMessage(true);
-
-                mSessionController.selectChannel(phantomChannel);
-            }
-        });
+        box.setOnMouseClicked(e -> mController.selectDmChannel(u));
 
         return box;
     }
@@ -466,12 +447,9 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         }
 
         UUID recipientId = message.getRecipient();
-        boolean isDM = false;
+        boolean isDM = recipientId.equals(mCurrentUser.getUuid());
         
         // Vérifier si c'est un DM (le destinataire est moi)
-        if (recipientId.equals(mCurrentUser.getUuid())) {
-            isDM = true;
-        }
 
         boolean needRefresh = false;
 

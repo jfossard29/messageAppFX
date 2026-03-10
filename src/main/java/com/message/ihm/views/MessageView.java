@@ -17,11 +17,12 @@ import java.util.Date;
 
 public class MessageView extends HBox {
 
-    private final String COLOR_TEXT = "#DCDDDE";
-    private final String COLOR_TEXT_MUTED = "#8E9297";
-    private final String COLOR_BACKGROUND = "#36393F";
-    private final String COLOR_BACKGROUND_SELF = "#40444B";
-    private final String COLOR_ACCENT = "#5865F2";
+    private static final String COLOR_TEXT = "#DCDDDE";
+    private static final String COLOR_TEXT_MUTED = "#8E9297";
+    private static final String COLOR_BACKGROUND = "#36393F";
+    private static final String COLOR_BACKGROUND_SELF = "#40444B";
+    private static final String COLOR_ACCENT = "#5865F2";
+    private static final String FONT_FAMILY = "Segoe UI";
 
     private final IChatController mChatController;
 
@@ -54,7 +55,7 @@ public class MessageView extends HBox {
                 message.getSender().getName().substring(0, 1).toUpperCase()
         );
         initial.setTextFill(Color.WHITE);
-        initial.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
+        initial.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 16));
 
         avatarPane.getChildren().addAll(circle, initial);
 
@@ -69,14 +70,14 @@ public class MessageView extends HBox {
 
         Label nameLabel = new Label(message.getSender().getName());
         nameLabel.setTextFill(Color.web(COLOR_TEXT));
-        nameLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+        nameLabel.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 14));
 
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
         Label dateLabel = new Label(
                 sdf.format(new Date(message.getEmissionDate()))
         );
         dateLabel.setTextFill(Color.web(COLOR_TEXT_MUTED));
-        dateLabel.setFont(Font.font("Segoe UI", 10));
+        dateLabel.setFont(Font.font(FONT_FAMILY, 10));
 
         header.getChildren().addAll(nameLabel, dateLabel);
 
@@ -84,11 +85,11 @@ public class MessageView extends HBox {
         Label messageContent = new Label(message.getText());
         messageContent.setWrapText(true);
         messageContent.setTextFill(Color.web(COLOR_TEXT));
-        messageContent.setFont(Font.font("Segoe UI", 14));
+        messageContent.setFont(Font.font(FONT_FAMILY, 14));
         
         // Style italique si message supprimé
         if ("Message supprimé.".equals(message.getText())) {
-             messageContent.setFont(Font.font("Segoe UI", javafx.scene.text.FontPosture.ITALIC, 14));
+             messageContent.setFont(Font.font(FONT_FAMILY, javafx.scene.text.FontPosture.ITALIC, 14));
              messageContent.setTextFill(Color.web(COLOR_TEXT_MUTED));
         }
 
