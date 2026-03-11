@@ -16,11 +16,21 @@ public class ChatController implements IChatController {
     private final DataManager mDataManager;
     private final ISession mSession;
 
+    /**
+     * Controls chat interactions.
+     * @param dataManager The data manager.
+     * @param session The current user session.
+     */
     public ChatController(DataManager dataManager, ISession session) {
         this.mDataManager = dataManager;
         this.mSession = session;
     }
 
+    /**
+     * Sends a message to a channel.
+     * @param text The message content.
+     * @param channel The channel to send the message to.
+     */
     @Override
     public void sendMessage(String text, Channel channel) {
         User sender = mSession.getConnectedUser();
@@ -48,6 +58,10 @@ public class ChatController implements IChatController {
         mDataManager.sendMessage(newMessage);
     }
 
+    /**
+     * Marks a message as deleted.
+     * @param message The message to delete.
+     */
     @Override
     public void deleteMessage(Message message) {
         if (message != null) {
@@ -56,6 +70,11 @@ public class ChatController implements IChatController {
         }
     }
 
+    /**
+     * Retrieves messages for a specific channel.
+     * @param channel The channel to get messages for.
+     * @return A set of messages belonging to the channel.
+     */
     @Override
     public Set<Message> getMessagesForChannel(Channel channel) {
         if (channel == null) {

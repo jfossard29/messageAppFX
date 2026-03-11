@@ -39,12 +39,11 @@ public class ProfileDialog extends Stage {
         root.setPadding(new Insets(25));
         root.setStyle("-fx-background-color: " + COLOR_BACKGROUND + ";");
 
-        // Label Nom
+        // --- Name Section ---
         Label nameLabel = new Label("NOM D'AFFICHAGE");
         nameLabel.setTextFill(Color.web("#B9BBBE"));
         nameLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
 
-        // Champ Nom
         TextField nameField = new TextField(currentUser.getName());
         nameField.setStyle(
                 "-fx-background-color: " + COLOR_INPUT + ";" +
@@ -52,7 +51,20 @@ public class ProfileDialog extends Stage {
                         "-fx-background-radius: 5;"
         );
 
-        // Bouton Enregistrer
+        // --- Picture URL Section ---
+        Label pictureLabel = new Label("URL DE L'IMAGE DE PROFIL");
+        pictureLabel.setTextFill(Color.web("#B9BBBE"));
+        pictureLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
+
+        TextField pictureField = new TextField(currentUser.getPicturePath());
+        pictureField.setPromptText("https://...");
+        pictureField.setStyle(
+                "-fx-background-color: " + COLOR_INPUT + ";" +
+                        "-fx-text-fill: white;" +
+                        "-fx-background-radius: 5;"
+        );
+
+        // --- Save Button ---
         Button saveBtn = new Button("Enregistrer");
         saveBtn.setMaxWidth(Double.MAX_VALUE);
         saveBtn.setStyle(
@@ -64,11 +76,11 @@ public class ProfileDialog extends Stage {
         );
 
         saveBtn.setOnAction(e -> {
-            controller.updateDisplayName(nameField.getText());
+            controller.updateProfile(nameField.getText(), pictureField.getText());
             close();
         });
 
-        // Zone de danger
+        // --- Danger Zone ---
         VBox dangerBox = new VBox(15);
         dangerBox.setPadding(new Insets(15));
         dangerBox.setStyle(
@@ -98,11 +110,13 @@ public class ProfileDialog extends Stage {
         root.getChildren().addAll(
                 nameLabel,
                 nameField,
+                pictureLabel,
+                pictureField,
                 saveBtn,
                 dangerBox
         );
 
-        Scene scene = new Scene(root, 400, 320);
+        Scene scene = new Scene(root, 400, 420);
         setScene(scene);
     }
 
@@ -111,9 +125,9 @@ public class ProfileDialog extends Stage {
         alert.setTitle("Confirmation de suppression");
         alert.setHeaderText("Supprimer votre compte ?");
         alert.setContentText(
-                new StringBuilder().append("Êtes-vous sûr de vouloir supprimer votre compte ?\n")
-                                   .append("Tous vos messages seront anonymisés.\n")
-                                   .append("Cette action est irréversible.").toString()
+                "Êtes-vous sûr de vouloir supprimer votre compte ?\n" +
+                "Tous vos messages seront anonymisés.\n" +
+                "Cette action est irréversible."
         );
 
         alert.showAndWait().ifPresent(result -> {

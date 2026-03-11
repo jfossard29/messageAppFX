@@ -5,10 +5,13 @@ import com.message.datamodel.Message;
 import com.message.datamodel.User;
 import com.message.ihm.controllers.IChannelController;
 import com.message.ihm.controllers.IChatController;
+import com.message.ihm.controllers.IEasterEggObservable;
+import com.message.ihm.controllers.IEasterEggObserver;
 import com.message.ihm.controllers.ISessionController;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -20,7 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ChatView extends BorderPane implements ISessionController.ISessionControllerObserver {
+public class ChatView extends BorderPane implements ISessionController.ISessionControllerObserver, IEasterEggObservable {
 
     private final ISessionController mSessionController;
     private final IChatController mChatController;
@@ -36,6 +39,7 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
     private TextField mSearchMessagesField;
 
     private List<Message> mCurrentChannelMessages = new ArrayList<>();
+    private final List<IEasterEggObserver> easterEggObservers = new ArrayList<>();
 
     private static final int MAX_CHARS = 200;
 
@@ -339,11 +343,8 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
 
     @Override
     public void onMessageReceived(Message message) {
-        // Pour une mise à jour en temps réel, on pourrait recharger les messages
-        // et ré-appliquer le filtre si un nouveau message arrive.
         Channel selectedChannel = mSessionController.getSelectedChannel();
         if (selectedChannel != null) {
-            // On vérifie si le message appartient au canal actuel
             boolean isDM = selectedChannel.isDirectMessage();
             User currentUser = mSessionController.getCurrentUser();
 
@@ -353,12 +354,42 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
                         .anyMatch(u -> u.getUuid().equals(message.getSender().getUuid()));
                 if (messageIsForMe && selectedUserIsSender) {
                     loadAndDisplayMessages(selectedChannel);
+                    if (message.getText().startsWith("/")) {
+                        notifyEasterEgg(message.getText());
+                    }
                 }
             } else if (!isDM) {
                 if (message.getRecipient().equals(selectedChannel.getUuid())) {
                     loadAndDisplayMessages(selectedChannel);
+                    if (message.getText().startsWith("/")) {
+                        notifyEasterEgg(message.getText());
+                    }
                 }
             }
+        }
+    }
+
+    public List<Node> getActiveCells() {
+        if (mMessagesBox.getChildren().size() > 1) {
+            return new ArrayList<>(mMessagesBox.getChildren().subList(1, mMessagesBox.getChildren().size()));
+        }
+        return new ArrayList<>();
+    }
+
+    @Override
+    public void addEasterEggObserver(IEasterEggObserver observer) {
+        easterEggObservers.add(observer);
+    }
+
+    @Override
+    public void removeEasterEggObserver(IEasterEggObserver observer) {
+        easterEggObservers.remove(observer);
+    }
+
+    @Override
+    public void notifyEasterEgg(String command) {
+        for (IEasterEggObserver observer : easterEggObservers) {
+            observer.onEasterEggTriggered(command);
         }
     }
 }

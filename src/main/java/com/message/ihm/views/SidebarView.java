@@ -10,15 +10,21 @@ import com.message.ihm.controllers.SidebarController;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -46,7 +52,6 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
     public SidebarView(SidebarController controller) {
         this.mController = controller;
 
-        // Register as observer to the underlying controllers
         this.mController.getSessionController().addObserver(this);
         this.mController.getChannelController().addObserver(this);
         this.mController.getProfileController().addObserver(this);
@@ -68,30 +73,14 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         Button addChannelBtn = new Button("+");
 
         String btnNormal = """
-                -fx-background-color: rgb(88,101,242);
-                -fx-text-fill: white;
-                -fx-font-weight: bold;
-                -fx-font-size: 16px;
-                -fx-background-radius: 4;
-                -fx-min-width: 28px;
-                -fx-min-height: 28px;
-                -fx-max-width: 28px;
-                -fx-max-height: 28px;
-                -fx-padding: 0;
-                -fx-cursor: hand;
+                -fx-background-color: rgb(88,101,242); -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px;
+                -fx-background-radius: 4; -fx-min-width: 28px; -fx-min-height: 28px; -fx-max-width: 28px; -fx-max-height: 28px;
+                -fx-padding: 0; -fx-cursor: hand;
                 """;
         String btnHover = """
-                -fx-background-color: rgb(71,82,196);
-                -fx-text-fill: white;
-                -fx-font-weight: bold;
-                -fx-font-size: 16px;
-                -fx-background-radius: 4;
-                -fx-min-width: 28px;
-                -fx-min-height: 28px;
-                -fx-max-width: 28px;
-                -fx-max-height: 28px;
-                -fx-padding: 0;
-                -fx-cursor: hand;
+                -fx-background-color: rgb(71,82,196); -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px;
+                -fx-background-radius: 4; -fx-min-width: 28px; -fx-min-height: 28px; -fx-max-width: 28px; -fx-max-height: 28px;
+                -fx-padding: 0; -fx-cursor: hand;
                 """;
 
         addChannelBtn.setStyle(btnNormal);
@@ -130,13 +119,8 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
 
         searchField = new TextField();
         searchField.setPromptText("Rechercher...");
-        searchField.setStyle("""
-                -fx-background-color: rgb(64,68,75);
-                -fx-text-fill: white;
-                """);
-
-        searchField.textProperty().addListener((obs, oldV, newV) ->
-                filterLists(newV));
+        searchField.setStyle("-fx-background-color: rgb(64,68,75); -fx-text-fill: white;");
+        searchField.textProperty().addListener((obs, oldV, newV) -> filterLists(newV));
 
         /* ================= USER PANEL ================= */
 
@@ -181,12 +165,12 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         this.setBottom(bottomBox);
     }
 
-    /* ================= PUBLIC METHODS ================= */
-
     public void setUser(User user) {
         this.mCurrentUser = user;
         if (user != null) {
             userProfileBtn.setText(user.getName());
+            userProfileBtn.setGraphic(createAvatar(user, 16, false));
+            userProfileBtn.setContentDisplay(ContentDisplay.LEFT);
         }
         refreshLists();
     }
@@ -197,91 +181,47 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         filterLists(searchField.getText());
     }
 
-    /* ================= FILTER ================= */
-
     private void filterLists(String query) {
-
         if (query == null) query = "";
-
         String lower = query.toLowerCase();
 
-        // Filter channels first
         Set<Channel> channelsToDisplay = listAllChannels.stream()
-                .filter(c -> {
-                    if (c.isPrivate()) {
-                        // If private, only show if current user is a member
-                        return mCurrentUser != null && c.getUsers().stream().anyMatch(u -> u.getUuid().equals(mCurrentUser.getUuid()));
-                    }
-                    return true; // Public channels are always visible
-                })
+                .filter(c -> !c.isPrivate() || (mCurrentUser != null && c.getUsers().stream().anyMatch(u -> u.getUuid().equals(mCurrentUser.getUuid()))))
                 .collect(Collectors.toSet());
 
         Set<Channel> channelsFiltered = channelsToDisplay.stream()
                 .filter(c -> c.getName().toLowerCase().contains(lower))
                 .collect(Collectors.toSet());
 
-
-        // Filter users based on selected channel
         Set<User> usersToDisplay;
-        
-        // On filtre les utilisateurs SEULEMENT si le canal sélectionné est privé ET n'est PAS un DM
         if (mSelectedChannel != null && mSelectedChannel.isPrivate() && !mSelectedChannel.isDirectMessage()) {
-            List<User> allowedUsers = mSelectedChannel.getUsers();
-            Set<UUID> allowedUserIds = allowedUsers.stream()
-                    .map(User::getUuid)
-                    .collect(Collectors.toSet());
-
-            usersToDisplay = listAllUsers.stream()
-                    .filter(u -> allowedUserIds.contains(u.getUuid()))
-                    .collect(Collectors.toSet());
+            Set<UUID> allowedUserIds = mSelectedChannel.getUsers().stream().map(User::getUuid).collect(Collectors.toSet());
+            usersToDisplay = listAllUsers.stream().filter(u -> allowedUserIds.contains(u.getUuid())).collect(Collectors.toSet());
         } else {
-            // Si c'est un canal public, un DM, ou aucun canal sélectionné, on affiche tout le monde
             usersToDisplay = new HashSet<>(listAllUsers);
         }
 
         Set<User> usersFiltered = usersToDisplay.stream()
-                .filter(u -> u.getUserTag().toLowerCase().contains(lower)
-                        || (u.getName() != null &&
-                        u.getName().toLowerCase().contains(lower)))
+                .filter(u -> u.getUserTag().toLowerCase().contains(lower) || (u.getName() != null && u.getName().toLowerCase().contains(lower)))
                 .collect(Collectors.toSet());
 
         updateDisplay(channelsFiltered, usersFiltered);
     }
 
-    /* ================= DISPLAY ================= */
-
-    private void updateDisplay(Set<Channel> channels,
-                               Set<User> users) {
-
+    private void updateDisplay(Set<Channel> channels, Set<User> users) {
         Platform.runLater(() -> {
-
             mainListBox.getChildren().clear();
 
             if (!channels.isEmpty()) {
-
-                Label channelTitle = sectionLabel("CANAUX");
-                mainListBox.getChildren().add(channelTitle);
-
-                for (Channel c : channels) {
-                    Button btn = createChannelButton(c);
-                    mainListBox.getChildren().add(btn);
-                }
+                mainListBox.getChildren().add(sectionLabel("CANAUX"));
+                channels.forEach(c -> mainListBox.getChildren().add(createChannelButton(c)));
             }
 
             if (!users.isEmpty()) {
-
-                Label userTitle = sectionLabel("UTILISATEURS");
-                userTitle.setPadding(new Insets(10, 0, 0, 0));
-                mainListBox.getChildren().add(userTitle);
-
-                for (User u : users) {
-                    if (mCurrentUser != null &&
-                            u.getUserTag().equals(mCurrentUser.getUserTag()))
-                        continue;
-
-                    HBox userRow = createUserRow(u);
-                    mainListBox.getChildren().add(userRow);
-                }
+                mainListBox.getChildren().add(sectionLabel("UTILISATEURS"));
+                users.stream()
+                     .filter(u -> mCurrentUser == null || !u.getUserTag().equals(mCurrentUser.getUserTag()))
+                     .forEach(u -> mainListBox.getChildren().add(createUserRow(u)));
             }
         });
     }
@@ -304,19 +244,16 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         String selectedStyle = "-fx-background-color: rgb(57,60,67); -fx-text-fill: white;";
         String unreadStyle = "-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold;";
 
-        // Apply base style first to prevent white background flash
         btn.setStyle(normalStyle);
 
-        // Style for unread messages
         if (unreadChannels.contains(c.getUuid())) {
             btn.setGraphic(new Circle(4, Color.WHITE));
             btn.setGraphicTextGap(8);
             btn.setStyle(unreadStyle);
         } else {
-            btn.setGraphic(null); // Ensure graphic is removed if not unread
+            btn.setGraphic(null);
         }
 
-        // Style for selected channel (overrides others)
         if (mSelectedChannel != null && !mSelectedChannel.isDirectMessage() && mSelectedChannel.getUuid().equals(c.getUuid())) {
              btn.setStyle(selectedStyle);
         }
@@ -337,21 +274,68 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         });
 
         btn.setOnAction(e -> mController.selectChannel(c));
-
         return btn;
     }
 
-    private HBox createUserRow(User u) {
+    private StackPane createAvatar(User user, double radius, boolean withStatus) {
+        StackPane rootStack = new StackPane();
+        StackPane avatarContainer = new StackPane();
+        Circle avatarCircle = new Circle(radius);
 
-        Circle status = new Circle(4);
-        status.setFill(u.isOnline()
-                ? Color.rgb(59,165,93)
-                : Color.rgb(116,127,141));
+        String picturePath = user.getPicturePath();
+        if (picturePath != null && !picturePath.trim().isEmpty()) {
+            Image image = new Image(picturePath, true);
+            
+            image.progressProperty().addListener((obs, oldProgress, newProgress) -> {
+                if (newProgress.doubleValue() == 1.0 && !image.isError()) {
+                    avatarCircle.setFill(new ImagePattern(image));
+                    avatarContainer.getChildren().setAll(avatarCircle);
+                }
+            });
+            
+            image.errorProperty().addListener((obs, wasError, isError) -> {
+                if (isError) {
+                    showUserInitial(avatarContainer, avatarCircle, user, radius);
+                }
+            });
+
+            if (image.getProgress() == 1.0 && !image.isError()) {
+                avatarCircle.setFill(new ImagePattern(image));
+                avatarContainer.getChildren().setAll(avatarCircle);
+            } else {
+                showUserInitial(avatarContainer, avatarCircle, user, radius);
+            }
+        } else {
+            showUserInitial(avatarContainer, avatarCircle, user, radius);
+        }
+
+        rootStack.getChildren().add(avatarContainer);
+
+        if (withStatus) {
+            Circle status = new Circle(radius * 0.4, user.isOnline() ? Color.rgb(59, 165, 93) : Color.rgb(116, 127, 141));
+            status.setStroke(Color.rgb(32, 34, 37));
+            status.setStrokeWidth(radius * 0.15);
+            rootStack.getChildren().add(status);
+            StackPane.setAlignment(status, Pos.BOTTOM_RIGHT);
+        }
+
+        return rootStack;
+    }
+
+    private void showUserInitial(StackPane container, Circle circle, User user, double radius) {
+        circle.setFill(Color.web("#5865F2"));
+        Label initial = new Label(user.getName().substring(0, 1).toUpperCase());
+        initial.setTextFill(Color.WHITE);
+        initial.setFont(Font.font("Segoe UI", FontWeight.BOLD, radius));
+        container.getChildren().setAll(circle, initial);
+    }
+
+    private HBox createUserRow(User u) {
+        StackPane avatarStack = createAvatar(u, 16, true);
 
         Label name = new Label(u.getName());
         name.setTextFill(Color.rgb(142,146,151));
         
-        // Gestion de l'alerte DM (pastille rouge)
         Circle alertBadge = null;
         if (unreadUsers.contains(u.getUuid())) {
             alertBadge = new Circle(4, Color.RED);
@@ -361,10 +345,10 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
 
         HBox box;
         if (alertBadge != null) {
-            box = new HBox(8, status, name, new Region(), alertBadge);
+            box = new HBox(8, avatarStack, name, new Region(), alertBadge);
             HBox.setHgrow(box.getChildren().get(2), Priority.ALWAYS);
         } else {
-            box = new HBox(8, status, name);
+            box = new HBox(8, avatarStack, name);
         }
         
         box.setAlignment(Pos.CENTER_LEFT);
@@ -373,18 +357,12 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         String normalStyle = "-fx-background-color: transparent;";
         String hoverStyle = "-fx-background-color: rgb(50,53,59); -fx-cursor: hand; -fx-background-radius: 4;";
         
-        // Si c'est l'utilisateur sélectionné (via DM)
-        if (mSelectedChannel != null && mSelectedChannel.isDirectMessage()) {
-             boolean isSelectedUser = mSelectedChannel.getUsers().stream()
-                     .anyMatch(user -> user.getUuid().equals(u.getUuid()));
-             if (isSelectedUser) {
-                 normalStyle = "-fx-background-color: rgb(57,60,67); -fx-background-radius: 4;";
-                 name.setTextFill(Color.WHITE);
-             }
+        if (mSelectedChannel != null && mSelectedChannel.isDirectMessage() && mSelectedChannel.getUsers().stream().anyMatch(user -> user.getUuid().equals(u.getUuid()))) {
+             normalStyle = "-fx-background-color: rgb(57,60,67); -fx-background-radius: 4;";
+             name.setTextFill(Color.WHITE);
         }
 
         box.setStyle(normalStyle);
-        
         final String finalNormalStyle = normalStyle;
         
         box.setOnMouseEntered(e -> {
@@ -398,34 +376,10 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
             }
         });
 
-        // --- Context Menu ---
         ContextMenu contextMenu = new ContextMenu();
         contextMenu.setStyle("-fx-background-color: #18191c; -fx-background-radius: 6; -fx-padding: 5;");
-
-        Label itemLabel = new Label("Voir le profil");
-        itemLabel.setTextFill(Color.web("#b9bbbe"));
-        itemLabel.setStyle("-fx-font-size: 14px;");
-        itemLabel.setMaxWidth(Double.MAX_VALUE);
-        
-        HBox itemBox = new HBox(itemLabel);
-        itemBox.setPadding(new Insets(8, 12, 8, 12));
-        itemBox.setStyle("-fx-background-color: transparent; -fx-background-radius: 4;");
-        itemBox.setAlignment(Pos.CENTER_LEFT);
-        
-        itemBox.hoverProperty().addListener((obs, wasHovered, isHovered) -> {
-            if (isHovered) {
-                itemBox.setStyle("-fx-background-color: #5865F2; -fx-background-radius: 4;");
-                itemLabel.setTextFill(Color.WHITE);
-            } else {
-                itemBox.setStyle("-fx-background-color: transparent; -fx-background-radius: 4;");
-                itemLabel.setTextFill(Color.web("#b9bbbe"));
-            }
-        });
-
-        CustomMenuItem profileItem = new CustomMenuItem(itemBox);
-        profileItem.setHideOnClick(true);
+        CustomMenuItem profileItem = new CustomMenuItem(new Label("Voir le profil"));
         profileItem.setOnAction(e -> showProfileDialog(u));
-
         contextMenu.getItems().add(profileItem);
 
         box.setOnMouseClicked(e -> {
@@ -444,24 +398,16 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         dialogStage.initModality(Modality.WINDOW_MODAL);
         dialogStage.initOwner(this.getScene().getWindow());
         dialogStage.setTitle("Profil de " + user.getName());
-
-        ProfileView profileView = new ProfileView(user);
-        Scene scene = new Scene(profileView, 350, 400);
-        
+        Scene scene = new Scene(new ProfileView(user), 350, 400);
         dialogStage.setScene(scene);
         dialogStage.showAndWait();
     }
 
-    /* ================= OBSERVER ================= */
-
     @Override
     public void onChannelSelected(Channel channel) {
         this.mSelectedChannel = channel;
-        
-        // Suppression des alertes si on sélectionne le canal concerné
         if (channel != null) {
             if (channel.isDirectMessage()) {
-                // Si c'est un DM, on enlève l'alerte pour l'autre utilisateur
                 if (mCurrentUser != null) {
                     channel.getUsers().stream()
                             .filter(u -> !u.getUuid().equals(mCurrentUser.getUuid()))
@@ -469,11 +415,9 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
                             .ifPresent(u -> unreadUsers.remove(u.getUuid()));
                 }
             } else {
-                // Si c'est un canal normal, on enlève l'alerte pour ce canal
                 unreadChannels.remove(channel.getUuid());
             }
         }
-        
         filterLists(searchField.getText());
     }
 
@@ -489,46 +433,31 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
 
     @Override
     public void onProfileUpdated() {
-        if (mCurrentUser != null) {
-            userProfileBtn.setText(mCurrentUser.getName());
-        }
-        refreshLists();
+        Platform.runLater(() -> {
+            if (mCurrentUser != null) {
+                userProfileBtn.setText(mCurrentUser.getName());
+                userProfileBtn.setGraphic(createAvatar(mCurrentUser, 16, false));
+            }
+            refreshLists();
+        });
     }
 
     @Override
     public void onMessageReceived(Message message) {
-        if (mCurrentUser == null) return;
-
-        // Ignorer mes propres messages
-        if (message.getSender().getUuid().equals(mCurrentUser.getUuid())) {
-            return;
-        }
+        if (mCurrentUser == null || message.getSender().getUuid().equals(mCurrentUser.getUuid())) return;
 
         UUID recipientId = message.getRecipient();
         boolean isDM = recipientId.equals(mCurrentUser.getUuid());
-        
-        // Vérifier si c'est un DM (le destinataire est moi)
-
         boolean needRefresh = false;
 
         if (isDM) {
-            // C'est un DM pour moi
             UUID senderId = message.getSender().getUuid();
-            
-            // Si je suis déjà en train de regarder ce DM, pas d'alerte
-            boolean isViewingThisDM = false;
-            if (mSelectedChannel != null && mSelectedChannel.isDirectMessage()) {
-                 isViewingThisDM = mSelectedChannel.getUsers().stream()
-                         .anyMatch(u -> u.getUuid().equals(senderId));
-            }
-
+            boolean isViewingThisDM = mSelectedChannel != null && mSelectedChannel.isDirectMessage() && mSelectedChannel.getUsers().stream().anyMatch(u -> u.getUuid().equals(senderId));
             if (!isViewingThisDM) {
                 unreadUsers.add(senderId);
                 needRefresh = true;
             }
         } else {
-            // C'est un message de canal
-            // Si je suis déjà sur ce canal, pas d'alerte
             if (mSelectedChannel == null || !mSelectedChannel.getUuid().equals(recipientId)) {
                 unreadChannels.add(recipientId);
                 needRefresh = true;
@@ -538,5 +467,25 @@ public class SidebarView extends BorderPane implements ISessionController.ISessi
         if (needRefresh) {
             refreshLists();
         }
+    }
+
+    public List<Node> getChannelCells() {
+        List<Node> channels = new ArrayList<>();
+        for (Node node : mainListBox.getChildren()) {
+            if (node instanceof Button) {
+                channels.add(node);
+            }
+        }
+        return channels;
+    }
+
+    public List<Node> getUserCells() {
+        List<Node> users = new ArrayList<>();
+        for (Node node : mainListBox.getChildren()) {
+            if (node instanceof HBox) {
+                users.add(node);
+            }
+        }
+        return users;
     }
 }

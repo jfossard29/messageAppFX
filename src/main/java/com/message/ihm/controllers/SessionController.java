@@ -19,27 +19,47 @@ public class SessionController implements ISessionController, IDatabaseObserver 
     private Channel mSelectedChannel;
     private final Set<ISessionControllerObserver> mObservers = new HashSet<>();
 
+    /**
+     * Manages the user session and related data.
+     * @param dataManager The data manager.
+     * @param mainController The main application controller.
+     */
     public SessionController(DataManager dataManager, MessageAppController mainController) {
         this.mDataManager = dataManager;
         this.mMainController = mainController;
         this.mDataManager.addObserver(this);
     }
 
+    /**
+     * Logs out the current user.
+     */
     @Override
     public void logout() {
         this.mMainController.logout();
     }
 
+    /**
+     * Gets the currently logged-in user.
+     * @return The current user.
+     */
     @Override
     public User getCurrentUser() {
         return this.mMainController.getCurrentUser();
     }
 
+    /**
+     * Gets all users from the data manager.
+     * @return A set of all users.
+     */
     @Override
     public Set<User> getAllUsers() {
         return this.mDataManager.getUsers();
     }
 
+    /**
+     * Selects a channel and notifies observers.
+     * @param channel The channel to select.
+     */
     @Override
     public void selectChannel(Channel channel) {
         this.mSelectedChannel = channel;
@@ -50,16 +70,28 @@ public class SessionController implements ISessionController, IDatabaseObserver 
         });
     }
 
+    /**
+     * Gets the currently selected channel.
+     * @return The selected channel.
+     */
     @Override
     public Channel getSelectedChannel() {
         return this.mSelectedChannel;
     }
 
+    /**
+     * Adds an observer to the session controller.
+     * @param observer The observer to add.
+     */
     @Override
     public void addObserver(ISessionControllerObserver observer) {
         mObservers.add(observer);
     }
 
+    /**
+     * Removes an observer from the session controller.
+     * @param observer The observer to remove.
+     */
     @Override
     public void removeObserver(ISessionControllerObserver observer) {
         mObservers.remove(observer);
@@ -67,6 +99,11 @@ public class SessionController implements ISessionController, IDatabaseObserver 
 
     // ---- Notifications ----
 
+    /**
+     * Checks if a message is relevant to the current channel.
+     * @param message The message to check.
+     * @return True if the message is relevant, false otherwise.
+     */
     private boolean isMessageRelevantForCurrentChannel(Message message) {
         if (mSelectedChannel == null) return false;
 
@@ -104,6 +141,10 @@ public class SessionController implements ISessionController, IDatabaseObserver 
         return false;
     }
 
+    /**
+     * Notifies observers when a message is added.
+     * @param addedMessage The added message.
+     */
     @Override
     public void notifyMessageAdded(Message addedMessage) {
         // Notification globale pour les alertes
@@ -123,6 +164,10 @@ public class SessionController implements ISessionController, IDatabaseObserver 
         }
     }
 
+    /**
+     * Notifies observers when a message is deleted.
+     * @param deletedMessage The deleted message.
+     */
     @Override
     public void notifyMessageDeleted(Message deletedMessage) {
         if (isMessageRelevantForCurrentChannel(deletedMessage)) {
@@ -134,6 +179,10 @@ public class SessionController implements ISessionController, IDatabaseObserver 
         }
     }
 
+    /**
+     * Notifies observers when a message is modified.
+     * @param modifiedMessage The modified message.
+     */
     @Override
     public void notifyMessageModified(Message modifiedMessage) {
         if (isMessageRelevantForCurrentChannel(modifiedMessage)) {
@@ -145,6 +194,10 @@ public class SessionController implements ISessionController, IDatabaseObserver 
         }
     }
 
+    /**
+     * Notifies observers when a user is added.
+     * @param addedUser The added user.
+     */
     @Override
     public void notifyUserAdded(User addedUser) {
         Platform.runLater(() -> {
@@ -154,6 +207,10 @@ public class SessionController implements ISessionController, IDatabaseObserver 
         });
     }
 
+    /**
+     * Notifies observers when a user is deleted.
+     * @param deletedUser The deleted user.
+     */
     @Override
     public void notifyUserDeleted(User deletedUser) {
         Platform.runLater(() -> {
@@ -163,6 +220,10 @@ public class SessionController implements ISessionController, IDatabaseObserver 
         });
     }
 
+    /**
+     * Notifies observers when a user is modified.
+     * @param modifiedUser The modified user.
+     */
     @Override
     public void notifyUserModified(User modifiedUser) {
         Platform.runLater(() -> {
@@ -172,10 +233,18 @@ public class SessionController implements ISessionController, IDatabaseObserver 
         });
     }
 
+    /**
+     * Notifies observers when a channel is added.
+     * @param addedChannel The added channel.
+     */
     @Override
     public void notifyChannelAdded(Channel addedChannel) {
     }
 
+    /**
+     * Notifies observers when a channel is deleted.
+     * @param deletedChannel The deleted channel.
+     */
     @Override
     public void notifyChannelDeleted(Channel deletedChannel) {
         if (mSelectedChannel != null && deletedChannel.getUuid().equals(mSelectedChannel.getUuid())) {
@@ -188,6 +257,10 @@ public class SessionController implements ISessionController, IDatabaseObserver 
         }
     }
 
+    /**
+     * Notifies observers when a channel is modified.
+     * @param modifiedChannel The modified channel.
+     */
     @Override
     public void notifyChannelModified(Channel modifiedChannel) {
         if (mSelectedChannel != null && modifiedChannel.getUuid().equals(mSelectedChannel.getUuid())) {

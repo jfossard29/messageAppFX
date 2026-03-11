@@ -1,6 +1,7 @@
 package com.message.ihm.views;
 
 import com.message.datamodel.User;
+import com.message.ihm.controllers.EasterEggManagerFx;
 import com.message.ihm.controllers.IChannelController;
 import com.message.ihm.controllers.IChatController;
 import com.message.ihm.controllers.IProfileController;
@@ -17,6 +18,7 @@ public class HomeView extends BorderPane {
 
     protected SidebarView mSidebarView;
     protected ChatView mChatView;
+    protected EasterEggManagerFx mEasterEggManager;
 
     public HomeView(ISessionController sessionController,
                     IChannelController channelController,
@@ -40,7 +42,7 @@ public class HomeView extends BorderPane {
         this.mChatView = new ChatView(
                 mSessionController,
                 mChatController,
-                mChannelController // Ajout du ChannelController
+                mChannelController
         );
 
         // Placement dans le BorderPane
@@ -49,6 +51,10 @@ public class HomeView extends BorderPane {
 
         // Optionnel : style global
         this.setStyle("-fx-background-color: rgb(54,57,63);");
+
+        // Initialisation du gestionnaire d'Easter Eggs
+        this.mEasterEggManager = new EasterEggManagerFx(this, mChatView, mSidebarView);
+        this.mChatView.addEasterEggObserver(mEasterEggManager);
     }
 
     public void setUser(User user) {

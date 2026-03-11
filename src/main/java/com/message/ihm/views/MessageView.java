@@ -1,13 +1,17 @@
 package com.message.ihm.views;
 
 import com.message.datamodel.Message;
+import com.message.datamodel.User;
 import com.message.ihm.controllers.IChatController;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -47,22 +51,41 @@ public class MessageView extends HBox {
         // Avatar
         StackPane avatarPane = new StackPane();
         avatarPane.setPrefSize(40, 40);
-
         Circle circle = new Circle(20);
-        circle.setFill(Color.web(COLOR_ACCENT));
+        
+        String picturePath = message.getSender().getPicturePath();
 
-        Label initial = new Label(
-                message.getSender().getName().substring(0, 1).toUpperCase()
-        );
-        initial.setTextFill(Color.WHITE);
-        initial.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 16));
+        if (picturePath != null && !picturePath.trim().isEmpty()) {
+            Image image = new Image(picturePath, true); // background loading
+            
+            // Wait for loading to complete before setting ImagePattern
+            image.progressProperty().addListener((obs, oldProgress, newProgress) -> {
+                if (newProgress.doubleValue() == 1.0 && !image.isError()) {
+                    circle.setFill(new ImagePattern(image));
+                    // Remove initials if present
+                    if (avatarPane.getChildren().size() > 1) {
+                        avatarPane.getChildren().remove(1); 
+                    }
+                }
+            });
+            
+            image.errorProperty().addListener((obs, wasError, isError) -> {
+                if (isError) {
+                    Platform.runLater(() -> showInitials(avatarPane, circle, message.getSender()));
+                }
+            });
+            
+            // Initially show initials or placeholder while loading
+            showInitials(avatarPane, circle, message.getSender());
 
-        avatarPane.getChildren().addAll(circle, initial);
+        } else {
+            showInitials(avatarPane, circle, message.getSender());
+        }
 
         // Conteneur message (droite)
         VBox messageBox = new VBox(3);
         messageBox.setAlignment(Pos.TOP_LEFT);
-        HBox.setHgrow(messageBox, Priority.ALWAYS); // Permet au messageBox de prendre l'espace restant
+        HBox.setHgrow(messageBox, Priority.ALWAYS);
 
         // Header (nom + date)
         HBox header = new HBox(8);
@@ -73,9 +96,7 @@ public class MessageView extends HBox {
         nameLabel.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 14));
 
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
-        Label dateLabel = new Label(
-                sdf.format(new Date(message.getEmissionDate()))
-        );
+        Label dateLabel = new Label(sdf.format(new Date(message.getEmissionDate())));
         dateLabel.setTextFill(Color.web(COLOR_TEXT_MUTED));
         dateLabel.setFont(Font.font(FONT_FAMILY, 10));
 
@@ -87,7 +108,6 @@ public class MessageView extends HBox {
         messageContent.setTextFill(Color.web(COLOR_TEXT));
         messageContent.setFont(Font.font(FONT_FAMILY, 14));
         
-        // Style italique si message supprimé
         if ("Message supprimé.".equals(message.getText())) {
              messageContent.setFont(Font.font(FONT_FAMILY, javafx.scene.text.FontPosture.ITALIC, 14));
              messageContent.setTextFill(Color.web(COLOR_TEXT_MUTED));
@@ -95,23 +115,21 @@ public class MessageView extends HBox {
 
         messageBox.getChildren().addAll(header, messageContent);
 
-        // Bouton de suppression (visible au survol si c'est l'utilisateur courant)
-        Button deleteButton = new Button("🗑"); // Icône corbeille
+        // Bouton de suppression
+        Button deleteButton = new Button("🗑");
         deleteButton.setStyle("-fx-background-color: transparent; -fx-text-fill: #ED4245; -fx-font-size: 14px; -fx-cursor: hand;");
         deleteButton.setVisible(false);
         
-        // Action de suppression
         deleteButton.setOnAction(e -> {
             if (mChatController != null) {
                 mChatController.deleteMessage(message);
             }
         });
 
-        // Gestion du hover sur le message entier
         this.setOnMouseEntered(e -> {
             if (isCurrentUser && !"Message supprimé.".equals(message.getText())) {
                 deleteButton.setVisible(true);
-                this.setStyle("-fx-background-color: #32353B;"); // Légèrement plus foncé au survol
+                this.setStyle("-fx-background-color: #32353B;");
             }
         });
 
@@ -121,5 +139,13 @@ public class MessageView extends HBox {
         });
 
         this.getChildren().addAll(avatarPane, messageBox, deleteButton);
+    }
+
+    private void showInitials(StackPane avatarPane, Circle circle, User user) {
+        circle.setFill(Color.web(COLOR_ACCENT));
+        Label initial = new Label(user.getName().substring(0, 1).toUpperCase());
+        initial.setTextFill(Color.WHITE);
+        initial.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 16));
+        avatarPane.getChildren().setAll(circle, initial);
     }
 }

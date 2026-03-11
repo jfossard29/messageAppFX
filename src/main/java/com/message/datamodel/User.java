@@ -26,6 +26,11 @@ public class User extends AbstractMessageAppObject implements IMessageRecipient 
 	protected String mName;
 
 	/**
+	 * Chemin vers l'image de profil (URL ou chemin local).
+	 */
+	protected String mPicturePath;
+
+	/**
 	 * Booléen indiquant si l'utilisateur est connecté.
 	 */
 	protected boolean mOnline = false;
@@ -33,7 +38,6 @@ public class User extends AbstractMessageAppObject implements IMessageRecipient 
 	/**
 	 * Constructeur.
 	 *
-	 * @param userTag      Tag correspondant à l'utilisateur.
 	 * @param userTag      Tag correspondant à l'utilisateur.
 	 * @param userPassword mot de passe de l'utilisateur.
 	 * @param name         Nom de l'utilisateur.
@@ -94,6 +98,22 @@ public class User extends AbstractMessageAppObject implements IMessageRecipient 
 	 */
 	public void setUserPassword(String userPassword) {
 		this.mUserPassword = userPassword;
+	}
+
+	/**
+	 * Retourne le chemin de l'image de profil.
+	 */
+	public String getPicturePath() {
+		return mPicturePath;
+	}
+
+	/**
+	 * Assigne le chemin de l'image de profil.
+	 *
+	 * @param picturePath
+	 */
+	public void setPicturePath(String picturePath) {
+		this.mPicturePath = picturePath;
 	}
 
 	/**

@@ -4,10 +4,11 @@ import com.message.datamodel.User;
 
 public interface IProfileController {
     /**
-     * Modifie le nom d'affichage de l'utilisateur courant.
+     * Met à jour le profil de l'utilisateur courant.
      * @param newName Le nouveau nom.
+     * @param newPictureUrl La nouvelle URL de l'image de profil.
      */
-    void updateDisplayName(String newName);
+    void updateProfile(String newName, String newPictureUrl);
 
     /**
      * Supprime le compte de l'utilisateur courant.

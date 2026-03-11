@@ -10,11 +10,23 @@ public class LoginController implements ILoginController {
     private final DataManager mDataManager;
     private final MessageAppController mMainController;
 
+    /**
+     * Manages user login and registration.
+     * @param dataManager The data manager for handling user data.
+     * @param mainController The main controller of the application.
+     */
     public LoginController(DataManager dataManager, MessageAppController mainController) {
         this.mDataManager = dataManager;
         this.mMainController = mainController;
     }
 
+    /**
+     * Registers a new user.
+     * @param name The name of the user.
+     * @param tag The user's tag.
+     * @param password The user's password.
+     * @return True if registration is successful, false otherwise.
+     */
     @Override
     public boolean registerUser(String name, String tag, String password) {
         // Vérifie si le tag utilisateur existe déjà
@@ -32,6 +44,12 @@ public class LoginController implements ILoginController {
         return true;
     }
 
+    /**
+     * Authenticates a user.
+     * @param tag The user's tag.
+     * @param password The user's password.
+     * @return True if authentication is successful, false otherwise.
+     */
     @Override
     public boolean authenticate(String tag, String password) {
         // Cherche un utilisateur correspondant au tag et au mot de passe

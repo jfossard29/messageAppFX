@@ -13,11 +13,20 @@ repositories {
 
 javafx {
     version = "21.0.2"
-    modules("javafx.controls", "javafx.fxml")
+    modules("javafx.controls", "javafx.fxml", "javafx.media")
 }
 
 application {
     mainClass.set("com.Main")
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDirs("src/main/resources", "src/main/java")
+            exclude("**/*.java")
+        }
+    }
 }
 
 dependencies {
@@ -27,6 +36,10 @@ dependencies {
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
+}
+
+tasks.withType<ProcessResources> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 tasks.register<Jar>("fatJar") {
@@ -39,4 +52,22 @@ tasks.register<Jar>("fatJar") {
     }
     from(sourceSets.main.get().output)
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+}
+
+tasks.register("cleanMessages") {
+    group = "cleanup"
+    description = "Supprime tous les fichiers .msg du dossier echanges"
+    doLast {
+        val echangesDir = file("src/main/resources/echanges")
+        if (echangesDir.exists()) {
+            echangesDir.walk()
+                .filter { it.isFile && it.extension == "msg" }
+                .forEach { 
+                    println("Deleting: ${it.name}")
+                    it.delete() 
+                }
+        } else {
+            println("Directory not found: ${echangesDir.absolutePath}")
+        }
+    }
 }

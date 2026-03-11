@@ -35,6 +35,11 @@ public class DataFilesManager {
 	 */
 	protected static final String PROPERTY_KEY_NAME = "Name";
 
+    /**
+     * Clé du fichier de propriété pour l'attribut picturePath
+     */
+    protected static final String PROPERTY_KEY_USER_PICTURE = "PicturePath";
+
 	/**
 	 * Clé du fichier de propriété pour l'attribut Sender
 	 */
@@ -80,10 +85,13 @@ public class DataFilesManager {
 	 */
 	protected String mDirectoryPath;
 
+    public DataFilesManager() {
+    }
+
 	/**
 	 * Lecture du fichier de propriété pour un {@link User}
 	 *
-	 * @param userFileName
+	 * @param userFile
 	 */
 	public User readUser(File userFile) {
 		User user = null;
@@ -95,9 +103,11 @@ public class DataFilesManager {
 			String tag = properties.getProperty(PROPERTY_KEY_USER_TAG, "NoTag");
 			String password = decrypt(properties.getProperty(PROPERTY_KEY_USER_PASSWORD, "NoPassword"));
 			String name = properties.getProperty(PROPERTY_KEY_NAME, "NoName");
-            Boolean online = Boolean.parseBoolean(properties.getProperty(PROPERTY_KEY_USER_ONLINE, "false"));
+            String picturePath = properties.getProperty(PROPERTY_KEY_USER_PICTURE, null);
+            boolean online = Boolean.parseBoolean(properties.getProperty(PROPERTY_KEY_USER_ONLINE, "false"));
 
 			user = new User(UUID.fromString(uuid), tag, password, name);
+            user.setPicturePath(picturePath);
             user.setOnline(online);
 		}
 
@@ -119,6 +129,9 @@ public class DataFilesManager {
 		properties.setProperty(PROPERTY_KEY_USER_TAG, user.getUserTag());
 		properties.setProperty(PROPERTY_KEY_USER_PASSWORD, encrypt(user.getUserPassword()));
 		properties.setProperty(PROPERTY_KEY_NAME, user.getName());
+        if (user.getPicturePath() != null) {
+            properties.setProperty(PROPERTY_KEY_USER_PICTURE, user.getPicturePath());
+        }
         properties.setProperty(PROPERTY_KEY_USER_ONLINE, Boolean.toString(user.isOnline()));
 
 		PropertiesManager.writeProperties(properties, destFileName);
@@ -127,7 +140,7 @@ public class DataFilesManager {
 	/**
 	 * Génération d'un fichier pour un utilisateur ({@link User}).
 	 *
-	 * @param user Utilisateur à générer.
+	 * @param channel Utilisateur à générer.
 	 */
 	public void writeChannelFile(Channel channel) {
 		Properties properties = new Properties();

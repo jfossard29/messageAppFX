@@ -7,6 +7,7 @@ import com.message.core.session.ISession;
 import com.message.datamodel.Channel;
 import com.message.datamodel.Message;
 import com.message.datamodel.User;
+import javafx.application.Platform;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,12 +26,22 @@ public class ProfileController implements IProfileController, IDatabaseObserver 
     }
 
     @Override
-    public void updateDisplayName(String newName) {
+    public void updateProfile(String newName, String newPictureUrl) {
         User currentUser = mSession.getConnectedUser();
-        if (currentUser != null && newName != null && !newName.trim().isEmpty()) {
-            currentUser.setName(newName);
-            mDataManager.updateUser(currentUser);
-            // notifyObservers(); // Handled by IDatabaseObserver
+        if (currentUser != null) {
+            boolean updated = false;
+            if (newName != null && !newName.trim().isEmpty() && !newName.equals(currentUser.getName())) {
+                currentUser.setName(newName);
+                updated = true;
+            }
+            if (newPictureUrl != null && !newPictureUrl.equals(currentUser.getPicturePath())) {
+                currentUser.setPicturePath(newPictureUrl);
+                updated = true;
+            }
+            
+            if (updated) {
+                mDataManager.updateUser(currentUser);
+            }
         }
     }
 
@@ -61,7 +72,6 @@ public class ProfileController implements IProfileController, IDatabaseObserver 
 
             // 4. Supprimer le fichier de l'utilisateur
             mDataManager.deleteAccount(userToDelete);
-            // notifyObservers(); // Handled by IDatabaseObserver
         }
     }
 
@@ -118,7 +128,7 @@ public class ProfileController implements IProfileController, IDatabaseObserver 
         // Check if the modified user is the current user
         User currentUser = mSession.getConnectedUser();
         if (currentUser != null && modifiedUser.getUuid().equals(currentUser.getUuid())) {
-            notifyObservers();
+            Platform.runLater(this::notifyObservers);
         }
     }
 
