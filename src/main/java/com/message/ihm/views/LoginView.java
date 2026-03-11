@@ -1,6 +1,6 @@
 package com.message.ihm.views;
 
-import com.message.ihm.controllers.ILoginController;
+import com.message.ihm.controllers.interfaces.ILoginController;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;

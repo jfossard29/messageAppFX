@@ -5,6 +5,7 @@ import com.message.core.database.IDatabaseObserver;
 import com.message.datamodel.Channel;
 import com.message.datamodel.Message;
 import com.message.datamodel.User;
+import com.message.ihm.controllers.interfaces.ISessionController;
 import javafx.application.Platform;
 
 import java.util.HashSet;
@@ -32,6 +33,7 @@ public class SessionController implements ISessionController, IDatabaseObserver 
 
     /**
      * Logs out the current user.
+     * SRS-MAP-USR-005 : L'utilisateur connecté peut se déconnecter de l'application.
      */
     @Override
     public void logout() {
@@ -49,6 +51,7 @@ public class SessionController implements ISessionController, IDatabaseObserver 
 
     /**
      * Gets all users from the data manager.
+     * SRS-MAP-USR-007 : L'utilisateur connecté peut consulter la liste des utilisateurs enregistrés.
      * @return A set of all users.
      */
     @Override
@@ -143,6 +146,7 @@ public class SessionController implements ISessionController, IDatabaseObserver 
 
     /**
      * Notifies observers when a message is added.
+     * SRS-MAP-CHN-009 : La présence d’un nouveau message dans un canal est signalée par un indicateur graphique.
      * @param addedMessage The added message.
      */
     @Override

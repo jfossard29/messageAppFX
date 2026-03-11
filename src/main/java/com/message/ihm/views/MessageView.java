@@ -2,7 +2,7 @@ package com.message.ihm.views;
 
 import com.message.datamodel.Message;
 import com.message.datamodel.User;
-import com.message.ihm.controllers.IChatController;
+import com.message.ihm.controllers.interfaces.IChatController;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

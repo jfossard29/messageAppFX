@@ -1,7 +1,7 @@
 package com.message.ihm.views;
 
 import com.message.datamodel.User;
-import com.message.ihm.controllers.IProfileController;
+import com.message.ihm.controllers.interfaces.IProfileController;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;

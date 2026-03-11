@@ -5,6 +5,7 @@ import com.message.core.session.ISession;
 import com.message.datamodel.Channel;
 import com.message.datamodel.Message;
 import com.message.datamodel.User;
+import com.message.ihm.controllers.interfaces.IChatController;
 
 import java.util.Optional;
 import java.util.Set;
@@ -28,6 +29,9 @@ public class ChatController implements IChatController {
 
     /**
      * Sends a message to a channel.
+     * SRS-MAP-MSG-002 : L'utilisateur connecté peut envoyer un message dans un canal public.
+     * SRS-MAP-MSG-004 : L'utilisateur connecté peut envoyer un message dans un canal privé dont il est membre.
+     * SRS-MAP-MSG-007 : L'utilisateur connecté peut envoyer un message privé à un utilisateur.
      * @param text The message content.
      * @param channel The channel to send the message to.
      */
@@ -60,6 +64,7 @@ public class ChatController implements IChatController {
 
     /**
      * Marks a message as deleted.
+     * SRS-MAP-MSG-006 : L'utilisateur connecté peut supprimer un message dont il est l’auteur.
      * @param message The message to delete.
      */
     @Override
@@ -72,6 +77,8 @@ public class ChatController implements IChatController {
 
     /**
      * Retrieves messages for a specific channel.
+     * SRS-MAP-MSG-001 : L'utilisateur connecté peut consulter les messages d’un canal public.
+     * SRS-MAP-MSG-003 : L'utilisateur connecté peut consulter les messages d’un canal privé dont il est membre.
      * @param channel The channel to get messages for.
      * @return A set of messages belonging to the channel.
      */

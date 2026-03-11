@@ -1,4 +1,4 @@
-package com.message.ihm.controllers;
+package com.message.ihm.controllers.interfaces;
 
 import com.message.datamodel.Channel;
 import com.message.datamodel.Message;

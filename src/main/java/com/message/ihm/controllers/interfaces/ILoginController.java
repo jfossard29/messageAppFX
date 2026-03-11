@@ -1,4 +1,4 @@
-package com.message.ihm.controllers;
+package com.message.ihm.controllers.interfaces;
 
 /**
  * Interface pour le contrôleur de la vue de connexion.

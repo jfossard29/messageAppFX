@@ -2,8 +2,7 @@ package com.message.ihm.controllers;
 
 import com.message.core.DataManager;
 import com.message.datamodel.User;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
+import com.message.ihm.controllers.interfaces.ILoginController;
 
 public class LoginController implements ILoginController {
 
@@ -22,6 +21,9 @@ public class LoginController implements ILoginController {
 
     /**
      * Registers a new user.
+     * SRS-MAP-USR-001 : L'utilisateur peut enregistrer un compte utilisateur dans le système (nom, tag).
+     * SRS-MAP-USR-002 : Le tag et le nom de l'utilisateur sont obligatoires.
+     * SRS-MAP-USR-003 : Le tag correspondant à un utilisateur est unique dans le système.
      * @param name The name of the user.
      * @param tag The user's tag.
      * @param password The user's password.
@@ -46,6 +48,7 @@ public class LoginController implements ILoginController {
 
     /**
      * Authenticates a user.
+     * SRS-MAP-USR-004 : L'utilisateur peut se connecter sur un compte préalablement enregistré.
      * @param tag The user's tag.
      * @param password The user's password.
      * @return True if authentication is successful, false otherwise.

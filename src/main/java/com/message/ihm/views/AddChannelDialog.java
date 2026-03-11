@@ -2,7 +2,7 @@ package com.message.ihm.views;
 
 import com.message.common.Constants;
 import com.message.datamodel.User;
-import com.message.ihm.controllers.IChannelController;
+import com.message.ihm.controllers.interfaces.IChannelController;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

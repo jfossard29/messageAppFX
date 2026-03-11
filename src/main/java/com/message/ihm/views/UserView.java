@@ -11,6 +11,7 @@ import javafx.scene.text.Font;
 
 /**
  * Vue représentant le profil d'un utilisateur (avatar, nom, tag) en JavaFX.
+ * Utilisée dans les listes d'utilisateurs et autres affichages de profil réduit.
  */
 public class UserView extends HBox {
 
@@ -18,10 +19,18 @@ public class UserView extends HBox {
     private static final Color COLOR_TEXT_MUTED = Color.web("#8E9297");
     private static final String FONT_FAMILY = "Segoe UI";
 
+    /**
+     * Crée une nouvelle vue pour un utilisateur donné.
+     * @param user L'utilisateur à afficher.
+     */
     public UserView(User user) {
         this.initGui(user);
     }
 
+    /**
+     * Initialise les composants graphiques de la vue utilisateur.
+     * Configure l'avatar circulaire (avec initiale) et les labels pour le nom et le tag.
+     */
     private void initGui(User user) {
         this.setSpacing(10);
         this.setPadding(new Insets(5));

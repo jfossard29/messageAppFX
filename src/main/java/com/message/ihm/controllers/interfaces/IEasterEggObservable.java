@@ -1,4 +1,4 @@
-package com.message.ihm.controllers;
+package com.message.ihm.controllers.interfaces;
 
 public interface IEasterEggObservable {
     void addEasterEggObserver(IEasterEggObserver observer);

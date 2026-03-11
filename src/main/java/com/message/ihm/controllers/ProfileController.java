@@ -7,6 +7,7 @@ import com.message.core.session.ISession;
 import com.message.datamodel.Channel;
 import com.message.datamodel.Message;
 import com.message.datamodel.User;
+import com.message.ihm.controllers.interfaces.IProfileController;
 import javafx.application.Platform;
 
 import java.util.ArrayList;
@@ -25,6 +26,10 @@ public class ProfileController implements IProfileController, IDatabaseObserver 
         this.mDataManager.addObserver(this);
     }
 
+    /**
+     * Updates the user's profile.
+     * SRS-MAP-USR-009 : L'utilisateur connecté peut modifier son nom d’utilisateur.
+     */
     @Override
     public void updateProfile(String newName, String newPictureUrl) {
         User currentUser = mSession.getConnectedUser();
@@ -45,6 +50,10 @@ public class ProfileController implements IProfileController, IDatabaseObserver 
         }
     }
 
+    /**
+     * Deletes the user's account.
+     * SRS-MAP-USR-010 : L'utilisateur connecté peut supprimer son compte.
+     */
     @Override
     public void deleteAccount() {
         User currentUser = mSession.getConnectedUser();

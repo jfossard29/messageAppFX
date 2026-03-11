@@ -1,7 +1,7 @@
 package com.message.ihm;
 
 import com.message.datamodel.User;
-import com.message.ihm.controllers.*;
+import com.message.ihm.controllers.interfaces.*;
 import com.message.ihm.views.HomeView;
 import com.message.ihm.views.LoginView;
 import javafx.scene.Scene;

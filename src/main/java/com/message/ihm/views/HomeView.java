@@ -1,11 +1,11 @@
 package com.message.ihm.views;
 
 import com.message.datamodel.User;
-import com.message.ihm.controllers.EasterEggManagerFx;
-import com.message.ihm.controllers.IChannelController;
-import com.message.ihm.controllers.IChatController;
-import com.message.ihm.controllers.IProfileController;
-import com.message.ihm.controllers.ISessionController;
+import com.message.ihm.controllers.managers.EasterEggManagerFx;
+import com.message.ihm.controllers.interfaces.IChannelController;
+import com.message.ihm.controllers.interfaces.IChatController;
+import com.message.ihm.controllers.interfaces.IProfileController;
+import com.message.ihm.controllers.interfaces.ISessionController;
 import com.message.ihm.controllers.SidebarController;
 import javafx.scene.layout.BorderPane;
 

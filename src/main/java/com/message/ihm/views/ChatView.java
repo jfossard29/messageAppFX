@@ -3,11 +3,11 @@ package com.message.ihm.views;
 import com.message.datamodel.Channel;
 import com.message.datamodel.Message;
 import com.message.datamodel.User;
-import com.message.ihm.controllers.IChannelController;
-import com.message.ihm.controllers.IChatController;
-import com.message.ihm.controllers.IEasterEggObservable;
-import com.message.ihm.controllers.IEasterEggObserver;
-import com.message.ihm.controllers.ISessionController;
+import com.message.ihm.controllers.interfaces.IChannelController;
+import com.message.ihm.controllers.interfaces.IChatController;
+import com.message.ihm.controllers.interfaces.IEasterEggObservable;
+import com.message.ihm.controllers.interfaces.IEasterEggObserver;
+import com.message.ihm.controllers.interfaces.ISessionController;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -51,6 +51,10 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
         initGui();
     }
 
+    /**
+     * Initialise la vue de discussion et configure ses composants graphiques.
+     * Cette méthode construit l'interface utilisateur complète (en-tête, zone de messages, zone de saisie).
+     */
     private void initGui() {
 
         this.setStyle("-fx-background-color: rgb(54,57,63);");
@@ -141,11 +145,13 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
             boolean isTooLong = length > MAX_CHARS;
             boolean isEmpty = length == 0;
             mCharCounter.setTextFill(isTooLong ? Color.RED : Color.GRAY);
+            // SRS-MAP-MSG-008 : Le texte d'un message ne dépasse pas 200 caractères.
             mSendButton.setDisable(isEmpty || isTooLong);
         });
 
         Runnable sendAction = () -> {
             String text = mInputField.getText();
+            // SRS-MAP-MSG-008 : Le texte d'un message ne dépasse pas 200 caractères.
             if (!text.isEmpty() && text.length() <= MAX_CHARS) {
                 mChatController.sendMessage(text, mSessionController.getSelectedChannel());
                 mInputField.clear();
@@ -164,6 +170,10 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
     }
 
     @Override
+    /**
+     * Méthode appelée lorsqu'un canal est sélectionné via le contrôleur de session.
+     * Met à jour l'interface pour afficher les messages du canal sélectionné.
+     */
     public void onChannelSelected(Channel channel) {
         Platform.runLater(() -> {
             resetUI();
@@ -186,6 +196,10 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
         });
     }
 
+    /**
+     * Réinitialise l'interface utilisateur en masquant les éléments spécifiques au canal précédent.
+     * Vide la liste des messages affichés.
+     */
     private void resetUI() {
         mMessagesBox.getChildren().clear();
         mInviteButton.setVisible(false);
@@ -198,6 +212,9 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
         mDeleteButton.setManaged(false);
     }
 
+    /**
+     * Met à jour le titre de l'en-tête en fonction du type de canal (public ou message direct).
+     */
     private void updateHeader(Channel channel) {
         if (channel.isDirectMessage()) {
             mChannelTitle.setText("@ " + channel.getName());
@@ -206,6 +223,10 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
         }
     }
 
+    /**
+     * Met à jour la visibilité des boutons d'action (inviter, gérer, quitter, supprimer) 
+     * selon les droits de l'utilisateur sur le canal.
+     */
     private void updateButtons(Channel channel, User currentUser) {
         if (currentUser == null || channel.isDirectMessage()) return;
 
@@ -228,6 +249,10 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
         }
     }
 
+    /**
+     * Charge les messages du canal depuis le contrôleur et les affiche dans la zone de discussion.
+     * Trie les messages par date d'émission.
+     */
     private void loadAndDisplayMessages(Channel channel) {
         Set<Message> messagesSet = mChatController.getMessagesForChannel(channel);
         this.mCurrentChannelMessages = messagesSet.stream()
@@ -237,6 +262,11 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
         applyMessageFilter();
     }
 
+    /**
+     * Filtre les messages affichés en fonction du texte saisi dans la barre de recherche.
+     * Si la recherche est vide, tous les messages du canal sont affichés.
+     * SRS-MAP-MSG-005 : L'utilisateur connecté peut rechercher un message dans un canal.
+     */
     private void applyMessageFilter() {
         User currentUser = mSessionController.getCurrentUser();
         String query = mSearchMessagesField.getText();
@@ -267,6 +297,9 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
         scrollToBottom();
     }
 
+    /**
+     * Ouvre une boîte de dialogue pour inviter des utilisateurs au canal actuel.
+     */
     private void openInviteDialog() {
         Channel currentChannel = mSessionController.getSelectedChannel();
         if (currentChannel != null) {
@@ -281,6 +314,9 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
         }
     }
 
+    /**
+     * Ouvre une boîte de dialogue pour gérer les paramètres du canal (ex: renommer).
+     */
     private void openManageDialog() {
         Channel currentChannel = mSessionController.getSelectedChannel();
         User currentUser = mSessionController.getCurrentUser();
@@ -295,6 +331,10 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
         }
     }
 
+    /**
+     * Demande confirmation à l'utilisateur avant de quitter le canal.
+     * Si confirmé, l'utilisateur est retiré du canal.
+     */
     private void confirmLeaveChannel() {
         Channel currentChannel = mSessionController.getSelectedChannel();
         User currentUser = mSessionController.getCurrentUser();
@@ -314,6 +354,10 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
         }
     }
 
+    /**
+     * Demande confirmation à l'utilisateur avant de supprimer le canal.
+     * Si confirmé, le canal est définitivement supprimé pour tous.
+     */
     private void confirmDeleteChannel() {
         Channel currentChannel = mSessionController.getSelectedChannel();
         
@@ -332,6 +376,9 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
         }
     }
 
+    /**
+     * Fait défiler la zone de messages vers le bas pour afficher le dernier message reçu.
+     */
     private void scrollToBottom() {
         Platform.runLater(() -> mScrollPane.setVvalue(1.0));
     }
@@ -342,6 +389,11 @@ public class ChatView extends BorderPane implements ISessionController.ISessionC
     }
 
     @Override
+    /**
+     * Méthode appelée lorsqu'un nouveau message est reçu.
+     * Si le message concerne le canal actif, l'affichage est mis à jour.
+     * SRS-MAP-MSG-010 : Une notification avertit l'utilisateur connecté lorsqu'un utilisateur lui envoie un message direct ou lorsqu’il est mentionné dans un canal.
+     */
     public void onMessageReceived(Message message) {
         Channel selectedChannel = mSessionController.getSelectedChannel();
         if (selectedChannel != null) {

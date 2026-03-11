@@ -1,5 +1,6 @@
-package com.message.ihm.controllers;
+package com.message.ihm.controllers.managers;
 
+import com.message.ihm.controllers.interfaces.IEasterEggObserver;
 import com.message.ihm.views.ChatView;
 import com.message.ihm.views.SidebarView;
 import com.message.ihm.views.fx.EasterEggAnimationFx;
